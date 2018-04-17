@@ -1,3 +1,15 @@
+// Copyright (c) Jupyter Development Team.
+// Distributed under the terms of the Modified BSD License.
+
+/**
+ * TODO:
+ *
+ * - Hook up as an abstract editor? Or at least as another default editor
+ * - `monaco.languages.getLanguages()` contains all of the highlighting modes -
+ *   use it to intelligently select a highlighter.
+ *
+ */
+
 import {
   JupyterLab, JupyterLabPlugin
 } from '@jupyterlab/application';
@@ -24,12 +36,13 @@ import * as monacoHTML from '../lib/JUPYTERLAB_FILE_LOADER_jupyterlab-monaco-htm
 import * as monacoJSON from '../lib/JUPYTERLAB_FILE_LOADER_jupyterlab-monaco-json.worker.bundle.js';
 import * as monacoTS from '../lib/JUPYTERLAB_FILE_LOADER_jupyterlab-monaco-ts.worker.bundle.js';
 
+
 let URLS: {[key: string]: string} = {
-  json: monacoJSON,
   css: monacoCSS,
   html: monacoHTML,
-  typescript: monacoTS,
   javascript: monacoTS,
+  json: monacoJSON,
+  typescript: monacoTS
 };
 
 (self as any).MonacoEnvironment = {
@@ -53,11 +66,7 @@ class MonacoWidget extends Widget {
     this.title.closable = true;
 
     this.editor = monaco.editor.create(this.node, {
-        value: [
-            'function x() {',
-            '\tconsole.log("Hello world!");',
-            '}'
-        ].join('\n'),
+        value: '// Some javascript',
         language: 'javascript'
     });
   }
