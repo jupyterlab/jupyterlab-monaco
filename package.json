@@ -25,7 +25,7 @@
     "url": "https://github.com/jasongrout/jupyterlab_monaco.git"
   },
   "scripts": {
-    "build": "tsc && webpack",
+    "build": "webpack && tsc",
     "clean": "rimraf lib",
     "watch": "tsc -w"
   },
