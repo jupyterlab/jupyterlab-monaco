@@ -24,7 +24,7 @@ import {
 } from '@jupyterlab/apputils';
 
 import {
-  uuid
+  uuid, PathExt
 } from '@jupyterlab/coreutils';
 
 
@@ -74,7 +74,8 @@ class MonacoWidget extends Widget implements DocumentRegistry.IReadyWidget {
   constructor(context: DocumentRegistry.CodeContext) {
     super();
     this.id = uuid();
-    this.title.label = 'Monaco Editor';
+    const localPath = context.localPath;
+    this.title.label = PathExt.basename(localPath);
     this.title.closable = true;
     this.context = context;
 
