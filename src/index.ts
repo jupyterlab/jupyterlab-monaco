@@ -14,6 +14,11 @@ import {
   JupyterLab, JupyterLabPlugin
 } from '@jupyterlab/application';
 
+/*
+import {
+  CodeEditor
+} from '@jupyterlab/codeeditor';
+*/
 import {
   ICommandPalette
 } from '@jupyterlab/apputils';
@@ -21,6 +26,12 @@ import {
 import {
   uuid
 } from '@jupyterlab/coreutils';
+
+
+import {
+  PromiseDelegate
+} from '@phosphor/coreutils';
+
 
 import {
   Widget
@@ -55,20 +66,62 @@ let URLS: {[key: string]: string} = {
 /**
 * An monaco widget.
 */
-class MonacoWidget extends Widget {
+export
+class MonacoWidget extends Widget implements DocumentRegistry.IReadyWidget {
   /**
-   * Construct a new xkcd widget.
+   * Construct a new Monaco widget.
    */
-  constructor() {
+  constructor(context: DocumentRegistry.CodeContext) {
     super();
     this.id = uuid();
     this.title.label = 'Monaco Editor';
     this.title.closable = true;
+    this.context = context;
+
+    context.ready.then(() => { this._onContextReady(); });
 
     this.editor = monaco.editor.create(this.node, {
-        value: '// Some javascript',
+        value: context.model.toString(),
         language: 'javascript'
     });
+  }
+
+    /**
+   * Handle actions that should be taken when the context is ready.
+   */
+  private _onContextReady(): void {
+    if (this.isDisposed) {
+      return;
+    }
+    const contextModel = this.context.model;
+
+    // Set the editor model value.
+    this.editor.setValue(contextModel.toString());
+
+    // Wire signal connections.
+    contextModel.contentChanged.connect(this._onContentChanged, this);
+
+    // Resolve the ready promise.
+    this._ready.resolve(undefined);
+  }
+
+  /**
+   * A promise that resolves when the file editor is ready.
+   */
+  get ready(): Promise<void> {
+    return this._ready.promise;
+  }
+
+  /**
+   * Handle a change in context model content.
+   */
+  private _onContentChanged(): void {
+    const oldValue = this.editor.getValue();
+    const newValue = this.context.model.toString();
+
+    if (oldValue !== newValue) {
+      this.editor.setValue(newValue);
+    }
   }
 
   onResize() {
@@ -79,9 +132,29 @@ class MonacoWidget extends Widget {
     this.editor.layout();
   }
 
+  context: DocumentRegistry.CodeContext;
+  private _ready = new PromiseDelegate<void>();
   editor: monaco.editor.IStandaloneCodeEditor;
 }
 
+import {
+  ABCWidgetFactory, DocumentRegistry
+} from '@jupyterlab/docregistry';
+
+
+/**
+ * A widget factory for editors.
+ */
+export
+class MonacoEditorFactory extends ABCWidgetFactory<MonacoWidget, DocumentRegistry.ICodeModel> {
+
+  /**
+   * Create a new widget given a context.
+   */
+  protected createNewWidget(context: DocumentRegistry.CodeContext): MonacoWidget {
+    return new MonacoWidget(context);
+  }
+}
 
 /**
  * Initialization data for the jupyterlab-monaco extension.
@@ -92,12 +165,20 @@ const extension: JupyterLabPlugin<void> = {
   requires: [ICommandPalette],
   activate: (app: JupyterLab, palette: ICommandPalette) => {
 
+    const factory = new MonacoEditorFactory({
+      name: 'Monaco Editor',
+      fileTypes: ['*']
+    });
+    app.docRegistry.addWidgetFactory(factory);
+
     // Add an application command
     const command: string = 'monaco:open';
     app.commands.addCommand(command, {
       label: 'Monaco Editor',
       execute: () => {
-        let widget = new MonacoWidget();
+        let widget = new Widget();
+        widget.node.innerHTML = 'Creating new files coming...'
+        //let widget = new MonacoWidget();
         app.shell.addToMainArea(widget);
 
         // Activate the widget
