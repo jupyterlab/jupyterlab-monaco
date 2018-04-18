@@ -27,6 +27,9 @@ import {
   uuid, PathExt
 } from '@jupyterlab/coreutils';
 
+import {
+  IEditorTracker
+} from '@jupyterlab/fileeditor';
 
 import {
   PromiseDelegate
@@ -159,16 +162,21 @@ class MonacoEditorFactory extends ABCWidgetFactory<MonacoWidget, DocumentRegistr
 
 /**
  * Initialization data for the jupyterlab-monaco extension.
+ *
+ * #### Notes
+ * The only reason we depend on the IEditorTracker is so that our docregistry
+ * 'defaultFor' runs *after* the file editors defaultFor.
  */
 const extension: JupyterLabPlugin<void> = {
   id: 'jupyterlab-monaco',
   autoStart: true,
-  requires: [ICommandPalette],
-  activate: (app: JupyterLab, palette: ICommandPalette) => {
+  requires: [ICommandPalette, IEditorTracker],
+  activate: (app: JupyterLab, palette: ICommandPalette, editorTracker: IEditorTracker) => {
 
     const factory = new MonacoEditorFactory({
       name: 'Monaco Editor',
-      fileTypes: ['*']
+      fileTypes: ['*'],
+      defaultFor: ['*']
     });
     app.docRegistry.addWidgetFactory(factory);
 
