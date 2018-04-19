@@ -31,5 +31,5 @@ export NODE_OPTIONS=--max-old-space-size=4096
 
 ## Development notes
 
-The tricky thing about this repo is that we webpack up Monaco as part of the build process and publish those JavaScript files as part of the package. Because Monaco likes to use web workers to start up parts of the application, we must have standalone js files and a way to get the URL for those files in the final JupyterLab build. We get the URL in the extension by using the webpack file loader in the JupyterLab build for the Monaco js files (JLab knows to use the file loader because we prefix the filename with `JUPYTERLAB_FILE_LOADER_`).
+The tricky thing about this repo is that we webpack up Monaco as part of the build process and publish those JavaScript files as part of the package. Because Monaco likes to use web workers to start up parts of the application, we must have standalone js files and a way to get the URL for those files in the final JupyterLab build. We get the URL in the extension by using the webpack file loader in the JupyterLab build for the Monaco js files.
 
