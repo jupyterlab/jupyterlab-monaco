@@ -11,7 +11,7 @@ module.exports = {
     "ts.worker": 'monaco-editor/esm/vs/language/typescript/ts.worker',
   },
   output: {
-    filename: 'JUPYTERLAB_FILE_LOADER_jupyterlab-monaco-[name].bundle.js',
+    filename: '[name].bundle.js',
     path: path.resolve(__dirname, 'lib'),
     globalObject: 'self'
   },
