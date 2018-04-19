@@ -5,7 +5,6 @@ A JupyterLab extension providing the [Monaco](https://github.com/Microsoft/monac
 ## Prerequisites
 
 * JupyterLab 0.32
-* The modifications at https://github.com/jupyterlab/jupyterlab/issues/4406 must be applied to the JupyterLab webpack config (usually in the `site-packages/jupyterlab/staging/webpack.config.js`)
 
 ## Development
 
