@@ -6,7 +6,6 @@
  *
  * - Hook up as an abstract editor? Or at least as another default editor
  * - `monaco.languages.getLanguages()` contains all of the highlighting modes -
- *   use it to intelligently select a highlighter.
  *
  */
 
@@ -14,11 +13,6 @@ import {
   JupyterLab, JupyterLabPlugin
 } from '@jupyterlab/application';
 
-/*
-import {
-  CodeEditor
-} from '@jupyterlab/codeeditor';
-*/
 import {
   ICommandPalette
 } from '@jupyterlab/apputils';
@@ -34,7 +28,6 @@ import {
 import {
   PromiseDelegate
 } from '@phosphor/coreutils';
-
 
 import {
   Widget
@@ -77,8 +70,7 @@ class MonacoWidget extends Widget implements DocumentRegistry.IReadyWidget {
   constructor(context: DocumentRegistry.CodeContext) {
     super();
     this.id = uuid();
-    const localPath = context.localPath;
-    this.title.label = PathExt.basename(localPath);
+    this.title.label = PathExt.basename(context.localPath);
     this.title.closable = true;
     this.context = context;
 
