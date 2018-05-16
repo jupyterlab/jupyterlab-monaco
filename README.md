@@ -10,6 +10,9 @@ As for the VS Code extensions: Monaco is the editor that powers VS Code. Or to p
 
 Feel free to head over to Monaco's repo and website to see what is and isn't possible. Their [FAQ](https://github.com/Microsoft/monaco-editor#faq) explains a lot.
 
+| ![Screenshot1](https://user-images.githubusercontent.com/192614/38904617-453d8afc-4260-11e8-9d69-e6fc88fd78c0.png) | ![Screenshot2](https://user-images.githubusercontent.com/192614/38904992-816919fe-4262-11e8-87a1-91c559317488.png) |
+| ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+
 ## Prerequisites
 
 * JupyterLab 0.32
