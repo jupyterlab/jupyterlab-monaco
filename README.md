@@ -2,6 +2,14 @@
 
 A JupyterLab extension providing the [Monaco](https://github.com/Microsoft/monaco-editor/) editor.
 
+The current state of this extension is merely a 'proof-of-concept' implementation and nowhere near production status. All functionality and interaction with the 'abstract editor interface' that JupyterLab provides is still missing.
+
+Also, the Codemirror themes, Codemirror syntax highlighting and Codemirror keymaps won't work with Monaco. That would have to be managed separately.
+
+As for the VS Code extensions: Monaco is the editor that powers VS Code. Or to put it otherwise: Monaco is merely a part of the whole VS Code application, packaged to work on the web (limited capabilities compared to desktop). An extension for VS Code therefore is not guaranteed to work on Monaco, as it probably uses a whole lot more of VS Code than merely the Monaco parts. The other way around is much more probable.
+
+Feel free to head over to Monaco's repo and website to see what is and isn't possible. Their [FAQ](https://github.com/Microsoft/monaco-editor#faq) explains a lot.
+
 ## Prerequisites
 
 * JupyterLab 0.32
