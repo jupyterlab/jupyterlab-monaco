@@ -74,12 +74,22 @@ class MonacoWidget extends Widget implements DocumentRegistry.IReadyWidget {
     this.title.closable = true;
     this.context = context;
 
-    context.ready.then(() => { this._onContextReady(); });
     let content = context.model.toString();
     let uri = monaco.Uri.parse(context.path);
+
+    let monaco_model = monaco.editor.createModel(content, undefined, uri);
     this.editor = monaco.editor.create(this.node, {
-      model: monaco.editor.createModel(content, undefined, uri)
+      model: monaco_model
     });
+
+    let the_editor = this.editor;
+    let the_model = this.context.model;
+
+    monaco_model.onDidChangeContent((event) => {
+      the_model.value.text = the_editor.getValue();
+    });
+
+    context.ready.then(() => { this._onContextReady(); });
   }
 
   /**
