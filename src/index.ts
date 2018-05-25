@@ -88,11 +88,8 @@ class MonacoWidget extends Widget implements DocumentRegistry.IReadyWidget {
       model: monaco_model
     });
 
-    let the_editor = this.editor;
-    let the_model = this.context.model;
-
     monaco_model.onDidChangeContent((event) => {
-      the_model.value.text = the_editor.getValue();
+      this.context.model.value.text = this.editor.getValue();
     });
 
     context.ready.then(() => { this._onContextReady(); });
