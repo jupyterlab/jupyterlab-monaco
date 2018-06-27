@@ -46,6 +46,9 @@ import * as monacoTS from 'file-loader!../lib/JUPYTERLAB_FILE_LOADER_jupyterlab-
 import { getLanguageService, TextDocument } from "vscode-json-languageservice";
 import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-languageclient';
 
+const LANGUAGE_ID = 'json';
+const MODEL_URI = 'inmemory://model.json'
+
 // register the JSON language with Monaco
 monaco.languages.register({
     id: "json",
@@ -69,6 +72,25 @@ let URLS: {[key: string]: string} = {
   }
 }
 
+function resovleSchema(url: string): Promise<string> {
+    const promise = new Promise<string>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.onload = () => resolve(xhr.responseText);
+        xhr.onerror = () => reject(xhr.statusText);
+        xhr.open("GET", url, true);
+        xhr.send();
+    });
+    return promise;
+}
+
+const m2p = new MonacoToProtocolConverter();
+const p2m = new ProtocolToMonacoConverter();
+const jsonService = getLanguageService({
+  schemaRequestService: resovleSchema
+  });
+const pendingValidationRequests = new Map<string, number>();
+
+
 /**
 * An monaco widget.
 */
@@ -88,8 +110,27 @@ class MonacoWidget extends Widget implements DocumentRegistry.IReadyWidget {
     let content = context.model.toString();
     let uri = monaco.Uri.parse(context.path);
     this.editor = monaco.editor.create(this.node, {
-      model: monaco.editor.createModel(content, undefined, uri)
+      model: monaco.editor.createModel(content, undefined, uri),
+      glyphMargin: true,
+      lightbulb: {
+        enabled: true
+      }
     });
+
+function createDocument(model: monaco.editor.IReadOnlyModel) {
+    return TextDocument.create(MODEL_URI, model.getModeId(), model.getVersionId(), model.getValue());
+}
+
+    monaco.languages.registerHoverProvider(LANGUAGE_ID, {
+      provideHover(model, position, token): monaco.languages.Hover | Thenable<monaco.languages.Hover> {
+        const document = createDocument(model);
+        const jsonDocument = jsonService.parseJSONDocument(document);
+        return jsonService.doHover(document, m2p.asPosition(position.lineNumber, position.column), jsonDocument).then((hover) => {
+            return p2m.asHover(hover);
+        });
+      }
+    });
+
   }
 
   /**
