@@ -123,6 +123,7 @@ function createDocument(model: monaco.editor.IReadOnlyModel) {
 
     monaco.languages.registerHoverProvider(LANGUAGE_ID, {
       provideHover(model, position, token): monaco.languages.Hover | Thenable<monaco.languages.Hover> {
+        console.log("hover");
         const document = createDocument(model);
         const jsonDocument = jsonService.parseJSONDocument(document);
         return jsonService.doHover(document, m2p.asPosition(position.lineNumber, position.column), jsonDocument).then((hover) => {
