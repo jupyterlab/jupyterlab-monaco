@@ -34,13 +34,18 @@
     "@jupyterlab/apputils": "^0.16.3",
     "@jupyterlab/coreutils": "^1.1.2",
     "@jupyterlab/fileeditor": "^0.16.2",
-    "monaco-editor": "^0.12.0"
+    "monaco-editor": "^0.12.0",
+    "monaco-languageclient": "^0.6.3",
+    "vscode-base-languageclient": "^0.0.1-alpha.5",
+    "vscode-languageserver-types": "^3.7.0",
+    "vscode-json-languageservice": "^3.1.0"
   },
   "devDependencies": {
     "rimraf": "^2.6.1",
     "typescript": "~2.6.0",
     "webpack": "^4.6.0",
-    "webpack-cli": "^2.0.14"
+    "webpack-cli": "^2.0.14",
+    "@types/node": "^7.0.12"
   },
   "jupyterlab": {
     "extension": true

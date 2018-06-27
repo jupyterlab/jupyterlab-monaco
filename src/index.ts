@@ -43,6 +43,16 @@ import * as monacoHTML from 'file-loader!../lib/JUPYTERLAB_FILE_LOADER_jupyterla
 import * as monacoJSON from 'file-loader!../lib/JUPYTERLAB_FILE_LOADER_jupyterlab-monaco-json.worker.bundle.js';
 import * as monacoTS from 'file-loader!../lib/JUPYTERLAB_FILE_LOADER_jupyterlab-monaco-ts.worker.bundle.js';
 
+import { getLanguageService, TextDocument } from "vscode-json-languageservice";
+import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-languageclient';
+
+// register the JSON language with Monaco
+monaco.languages.register({
+    id: "json",
+    extensions: ['.json', '.bowerrc', '.jshintrc', '.jscsrc', '.eslintrc', '.babelrc'],
+    aliases: ['JSON', 'json'],
+    mimetypes: ['application/json'],
+});
 
 let URLS: {[key: string]: string} = {
   css: monacoCSS,
