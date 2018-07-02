@@ -9,6 +9,8 @@
  *
  */
 
+const LANGUAGE = 'Python'
+
 require('monaco-editor-core');
 
 import {
@@ -54,11 +56,11 @@ import normalizeUrl = require('normalize-url');
 const ReconnectingWebSocket = require('reconnecting-websocket');
 
 // register the Python language with Monaco
-monaco.languages.register({
-    id: "python",
-    extensions: ['.py'],
-    aliases: ['Python', 'PYTHON']
-});
+//monaco.languages.register({
+//    id: LANGUAGE,
+//    extensions: ['.py'],
+//    aliases: ['python', 'PYTHON']
+//});
 
 let URLS: {[key: string]: string} = {
   css: monacoCSS,
@@ -89,9 +91,23 @@ function resovleSchema(url: string): Promise<string> {
 const m2p = new MonacoToProtocolConverter();
 const p2m = new ProtocolToMonacoConverter();
 const jsonService = getLanguageService({
-  schemaRequestService: resovleSchema
+//  schemaRequestService: resovleSchema
   });
 const pendingValidationRequests = new Map<string, number>();
+
+function createDocument(model: monaco.editor.ITextModel) {
+    return TextDocument.create(model.uri.toString(), model.getModeId(), model.getVersionId(), model.getValue());
+}
+
+monaco.languages.registerHoverProvider(LANGUAGE, {
+    provideHover(model, position, token): monaco.languages.Hover | Thenable<monaco.languages.Hover> {
+        const document = createDocument(model);
+        const jsonDocument = jsonService.parseJSONDocument(document);
+        return jsonService.doHover(document, m2p.asPosition(position.lineNumber, position.column), jsonDocument).then((hover) => {
+            return p2m.asHover(hover);
+        });
+    }
+});
 
 function createUrl(path: string): string {
     const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
@@ -143,7 +159,7 @@ class MonacoWidget extends Widget implements DocumentRegistry.IReadyWidget {
         name: "Sample Language Client",
         clientOptions: {
             // use a language id as a document selector
-            documentSelector: ['python'],
+            documentSelector: [LANGUAGE],
             // disable the default error handler
             errorHandler: {
                 error: () => ErrorAction.Continue,
