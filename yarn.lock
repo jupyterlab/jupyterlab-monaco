@@ -261,6 +261,10 @@
   version "0.7.0"
   resolved "https://registry.yarnpkg.com/@sindresorhus/is/-/is-0.7.0.tgz#9a06f4f137ee84d7df0460c1fdb1135ffa6c50fd"
 
+"@types/node@^7.0.12":
+  version "7.0.66"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-7.0.66.tgz#3d1dc4d6f52e484e843806ff456379f7e6ad5553"
+
 "@types/react@~16.0.19":
   version "16.0.41"
   resolved "https://registry.yarnpkg.com/@types/react/-/react-16.0.41.tgz#72146737f4d439dc95a53315de4bfb43ac8542ca"
@@ -2235,6 +2239,10 @@ glob-parent@^3.1.0:
     is-glob "^3.1.0"
     path-dirname "^1.0.0"
 
+glob-to-regexp@^0.3.0:
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/glob-to-regexp/-/glob-to-regexp-0.3.0.tgz#8c5a1494d2066c570cc3bfe4496175acc4d502ab"
+
 glob@^7.0.0, glob@^7.0.3, glob@^7.0.5, glob@^7.1.2:
   version "7.1.2"
   resolved "https://registry.yarnpkg.com/glob/-/glob-7.1.2.tgz#c19c9df9a028702d678612384a6552404c636d15"
@@ -2934,6 +2942,10 @@ json5@^0.5.0, json5@^0.5.1:
   version "0.5.1"
   resolved "https://registry.yarnpkg.com/json5/-/json5-0.5.1.tgz#1eade7acc012034ad84e2396767ead9fa5495821"
 
+jsonc-parser@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/jsonc-parser/-/jsonc-parser-2.0.1.tgz#9d23cd2709714fff508a1a6679d82135bee1ae60"
+
 jsonify@~0.0.0:
   version "0.0.0"
   resolved "https://registry.yarnpkg.com/jsonify/-/jsonify-0.0.0.tgz#2c74b6ee41d93ca51b7b5aaee8f503631d252a73"
@@ -3285,9 +3297,22 @@ moment@~2.21.0:
   version "2.21.0"
   resolved "https://registry.yarnpkg.com/moment/-/moment-2.21.0.tgz#2a114b51d2a6ec9e6d83cf803f838a878d8a023a"
 
+monaco-editor-core@^0.12.0:
+  version "0.12.0"
+  resolved "https://registry.yarnpkg.com/monaco-editor-core/-/monaco-editor-core-0.12.0.tgz#185c4233907582b78472fe30bad13af7ad6e8d8e"
+
 monaco-editor@^0.12.0:
   version "0.12.0"
   resolved "https://registry.yarnpkg.com/monaco-editor/-/monaco-editor-0.12.0.tgz#cd8621017526b57746245104d764bbf52ad42283"
+
+monaco-languageclient@^0.6.3:
+  version "0.6.3"
+  resolved "https://registry.yarnpkg.com/monaco-languageclient/-/monaco-languageclient-0.6.3.tgz#ab652a9ac6803dc93414f601e32421b1bef20aac"
+  dependencies:
+    glob-to-regexp "^0.3.0"
+    monaco-editor-core "^0.12.0"
+    vscode-base-languageclient "^0.0.1-alpha.5"
+    vscode-languageserver-types "^3.7.0"
 
 move-concurrently@^1.0.1:
   version "1.0.1"
@@ -3341,6 +3366,10 @@ nanomatch@^1.2.9:
 neo-async@^2.5.0:
   version "2.5.1"
   resolved "https://registry.yarnpkg.com/neo-async/-/neo-async-2.5.1.tgz#acb909e327b1e87ec9ef15f41b8a269512ad41ee"
+
+net@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/net/-/net-1.0.2.tgz#d1757ec9a7fb2371d83cf4755ce3e27e10829388"
 
 nice-try@^1.0.4:
   version "1.0.4"
@@ -3430,7 +3459,7 @@ normalize-path@^2.0.1, normalize-path@^2.1.1:
   dependencies:
     remove-trailing-separator "^1.0.1"
 
-normalize-url@2.0.1:
+normalize-url@2.0.1, normalize-url@^2.0.1:
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/normalize-url/-/normalize-url-2.0.1.tgz#835a9da1551fa26f70e92329069a23aa6574d7e6"
   dependencies:
@@ -3965,6 +3994,10 @@ rechoir@^0.6.2:
   resolved "https://registry.yarnpkg.com/rechoir/-/rechoir-0.6.2.tgz#85204b54dba82d5742e28c96756ef43af50e3384"
   dependencies:
     resolve "^1.1.6"
+
+reconnecting-websocket@^3.2.2:
+  version "3.2.2"
+  resolved "https://registry.yarnpkg.com/reconnecting-websocket/-/reconnecting-websocket-3.2.2.tgz#8097514e926e9855e03c39e76efa2e3d1f371bee"
 
 regenerate@^1.2.1:
   version "1.3.3"
@@ -4853,6 +4886,45 @@ vm-browserify@0.0.4:
   resolved "https://registry.yarnpkg.com/vm-browserify/-/vm-browserify-0.0.4.tgz#5d7ea45bbef9e4a6ff65f95438e0a87c357d5a73"
   dependencies:
     indexof "0.0.1"
+
+vscode-base-languageclient@^0.0.1-alpha.5:
+  version "0.0.1-alpha.5"
+  resolved "https://registry.yarnpkg.com/vscode-base-languageclient/-/vscode-base-languageclient-0.0.1-alpha.5.tgz#2a908a7bc6fe7d60574c103f669c656354818e7e"
+  dependencies:
+    vscode-jsonrpc "^3.2.0"
+    vscode-languageserver-types "^3.2.0"
+    vscode-uri "^1.0.0"
+
+vscode-json-languageservice@^3.1.0:
+  version "3.1.2"
+  resolved "https://registry.yarnpkg.com/vscode-json-languageservice/-/vscode-json-languageservice-3.1.2.tgz#5c70fc32ad389e6da48452e7b0187ea5e70f68bf"
+  dependencies:
+    jsonc-parser "^2.0.1"
+    vscode-languageserver-types "^3.7.2"
+    vscode-nls "^3.2.2"
+    vscode-uri "^1.0.3"
+
+vscode-jsonrpc@^3.2.0, vscode-jsonrpc@^3.6.0:
+  version "3.6.2"
+  resolved "https://registry.yarnpkg.com/vscode-jsonrpc/-/vscode-jsonrpc-3.6.2.tgz#3b5eef691159a15556ecc500e9a8a0dd143470c8"
+
+vscode-languageserver-types@^3.2.0, vscode-languageserver-types@^3.7.0, vscode-languageserver-types@^3.7.2:
+  version "3.8.2"
+  resolved "https://registry.yarnpkg.com/vscode-languageserver-types/-/vscode-languageserver-types-3.8.2.tgz#2550b8d852195328a735c56dbf4e72b8da31613f"
+
+vscode-nls@^3.2.2:
+  version "3.2.2"
+  resolved "https://registry.yarnpkg.com/vscode-nls/-/vscode-nls-3.2.2.tgz#3817eca5b985c2393de325197cf4e15eb2aa5350"
+
+vscode-uri@^1.0.0, vscode-uri@^1.0.3:
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/vscode-uri/-/vscode-uri-1.0.5.tgz#3b899a8ef71c37f3054d79bdbdda31c7bf36f20d"
+
+vscode-ws-jsonrpc@^0.0.2-1:
+  version "0.0.2-2"
+  resolved "https://registry.yarnpkg.com/vscode-ws-jsonrpc/-/vscode-ws-jsonrpc-0.0.2-2.tgz#3d977ea40a2f47148ea8cfcbf077196ecd7fe3a2"
+  dependencies:
+    vscode-jsonrpc "^3.6.0"
 
 watchpack@^1.5.0:
   version "1.5.0"

@@ -9,6 +9,8 @@
  *
  */
 
+require('monaco-editor-core');
+
 import {
   JupyterLab, JupyterLabPlugin
 } from '@jupyterlab/application';
@@ -33,8 +35,6 @@ import {
   Widget
 } from '@phosphor/widgets';
 
-import * as monaco from 'monaco-editor';
-
 import '../style/index.css';
 
 import * as monacoCSS from 'file-loader!../lib/JUPYTERLAB_FILE_LOADER_jupyterlab-monaco-css.worker.bundle.js';
@@ -44,17 +44,20 @@ import * as monacoJSON from 'file-loader!../lib/JUPYTERLAB_FILE_LOADER_jupyterla
 import * as monacoTS from 'file-loader!../lib/JUPYTERLAB_FILE_LOADER_jupyterlab-monaco-ts.worker.bundle.js';
 
 import { getLanguageService, TextDocument } from "vscode-json-languageservice";
-import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-languageclient';
+import { listen, MessageConnection } from 'vscode-ws-jsonrpc';
+import {
+    MonacoToProtocolConverter, ProtocolToMonacoConverter,
+    BaseLanguageClient, CloseAction, ErrorAction,
+    createMonacoServices, createConnection
+} from 'monaco-languageclient';
+import normalizeUrl = require('normalize-url');
+const ReconnectingWebSocket = require('reconnecting-websocket');
 
-const LANGUAGE_ID = 'json';
-const MODEL_URI = 'inmemory://model.json'
-
-// register the JSON language with Monaco
+// register the Python language with Monaco
 monaco.languages.register({
-    id: "json",
-    extensions: ['.json', '.bowerrc', '.jshintrc', '.jscsrc', '.eslintrc', '.babelrc'],
-    aliases: ['JSON', 'json'],
-    mimetypes: ['application/json'],
+    id: "python",
+    extensions: ['.py'],
+    aliases: ['Python', 'PYTHON']
 });
 
 let URLS: {[key: string]: string} = {
@@ -90,6 +93,22 @@ const jsonService = getLanguageService({
   });
 const pendingValidationRequests = new Map<string, number>();
 
+function createUrl(path: string): string {
+    const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
+    return normalizeUrl(`${protocol}://${location.host}${location.pathname}${path}`);
+}
+
+function createWebSocket(url: string): WebSocket {
+    const socketOptions = {
+        maxReconnectionDelay: 10000,
+        minReconnectionDelay: 1000,
+        reconnectionDelayGrowFactor: 1.3,
+        connectionTimeout: 10000,
+        maxRetries: Infinity,
+        debug: false
+    };
+    return new ReconnectingWebSocket(url, undefined, socketOptions);
+}
 
 /**
 * An monaco widget.
@@ -109,33 +128,53 @@ class MonacoWidget extends Widget implements DocumentRegistry.IReadyWidget {
     context.ready.then(() => { this._onContextReady(); });
     let content = context.model.toString();
     let uri = monaco.Uri.parse(context.path);
-    this.editor = monaco.editor.create(this.node, {
+    let editor = monaco.editor.create(this.node, {
       model: monaco.editor.createModel(content, undefined, uri),
       glyphMargin: true,
       lightbulb: {
         enabled: true
       }
     });
+    this.editor = editor;
 
-function createDocument(model: monaco.editor.IReadOnlyModel) {
-    return TextDocument.create(MODEL_URI, model.getModeId(), model.getVersionId(), model.getValue());
-}
+    const services = createMonacoServices(editor);
+    function createLanguageClient(connection: MessageConnection): BaseLanguageClient {
+      return new BaseLanguageClient({
+        name: "Sample Language Client",
+        clientOptions: {
+            // use a language id as a document selector
+            documentSelector: ['python'],
+            // disable the default error handler
+            errorHandler: {
+                error: () => ErrorAction.Continue,
+                closed: () => CloseAction.DoNotRestart
+            }
+        },
+        services,
+        // create a language client connection from the JSON RPC connection on demand
+        connectionProvider: {
+            get: (errorHandler, closeHandler) => {
+                return Promise.resolve(createConnection(connection, errorHandler, closeHandler))
+            }
+        }
+      })
+    }
 
-    monaco.languages.registerHoverProvider(LANGUAGE_ID, {
-      provideHover(model, position, token): monaco.languages.Hover | Thenable<monaco.languages.Hover> {
-        console.log("hover");
-	console.log(m2p.asPosition(position.lineNumber, position.column));
-        const document = createDocument(model);
-        const jsonDocument = jsonService.parseJSONDocument(document);
-	/*
-        return jsonService.doHover(document, m2p.asPosition(position.lineNumber, position.column), jsonDocument).then((hover) => {
-            return p2m.asHover(hover);
-        });
-	*/
-	return p2m.asHover({ contents: ["hover"] });
-      }
-    });
-
+// create the web socket
+//const url = createUrl('/com.ibm.wala.cast.lsp.tomcat/endpoint')
+//const webSocket = createWebSocket(url);
+//const webSocket = createWebSocket('ws://localhost:8080/WebSocketServerExample/websocketendpoint');
+const webSocket = createWebSocket('ws://localhost:8080/com.ibm.wala.cast.lsp.tomcat/websocket');
+// listen when the web socket is opened
+listen({
+    webSocket,
+    onConnection: connection => {
+        // create and start the language client
+        const languageClient = createLanguageClient(connection);
+        const disposable = languageClient.start();
+        connection.onClose(() => disposable.dispose());
+    }
+});
   }
 
   /**
