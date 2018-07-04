@@ -9,7 +9,7 @@
  *
  */
 
-const LANGUAGE = 'Python'
+const LANGUAGE = "python"
 
 require('monaco-editor-core');
 
@@ -55,13 +55,6 @@ import {
 import normalizeUrl = require('normalize-url');
 const ReconnectingWebSocket = require('reconnecting-websocket');
 
-// register the Python language with Monaco
-//monaco.languages.register({
-//    id: LANGUAGE,
-//    extensions: ['.py'],
-//    aliases: ['python', 'PYTHON']
-//});
-
 let URLS: {[key: string]: string} = {
   css: monacoCSS,
   html: monacoHTML,
@@ -99,16 +92,6 @@ function createDocument(model: monaco.editor.ITextModel) {
     return TextDocument.create(model.uri.toString(), model.getModeId(), model.getVersionId(), model.getValue());
 }
 
-monaco.languages.registerHoverProvider(LANGUAGE, {
-    provideHover(model, position, token): monaco.languages.Hover | Thenable<monaco.languages.Hover> {
-        const document = createDocument(model);
-        const jsonDocument = jsonService.parseJSONDocument(document);
-        return jsonService.doHover(document, m2p.asPosition(position.lineNumber, position.column), jsonDocument).then((hover) => {
-            return p2m.asHover(hover);
-        });
-    }
-});
-
 function createUrl(path: string): string {
     const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
     return normalizeUrl(`${protocol}://${location.host}${location.pathname}${path}`);
@@ -125,6 +108,15 @@ function createWebSocket(url: string): WebSocket {
     };
     return new ReconnectingWebSocket(url, undefined, socketOptions);
 }
+
+// register the Python language with Monaco
+monaco.languages.register({
+	id: LANGUAGE,
+    	extensions: ['.py'],
+    	aliases: ['Python', 'PYTHON', 'py'],
+    	mimetypes: ['text/plain']
+});
+
 
 /**
 * An monaco widget.
@@ -145,7 +137,8 @@ class MonacoWidget extends Widget implements DocumentRegistry.IReadyWidget {
     let content = context.model.toString();
     let uri = monaco.Uri.parse(context.path);
     let editor = monaco.editor.create(this.node, {
-      model: monaco.editor.createModel(content, undefined, uri),
+      language: LANGUAGE,
+      model: monaco.editor.createModel(content, LANGUAGE, uri),
       glyphMargin: true,
       lightbulb: {
         enabled: true
