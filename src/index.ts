@@ -39,11 +39,11 @@ import {
 
 import '../style/index.css';
 
-import * as monacoCSS from 'file-loader!../lib/JUPYTERLAB_FILE_LOADER_jupyterlab-monaco-css.worker.bundle.js';
-import * as monacoEditor from 'file-loader!../lib/JUPYTERLAB_FILE_LOADER_jupyterlab-monaco-editor.worker.bundle.js';
-import * as monacoHTML from 'file-loader!../lib/JUPYTERLAB_FILE_LOADER_jupyterlab-monaco-html.worker.bundle.js';
-import * as monacoJSON from 'file-loader!../lib/JUPYTERLAB_FILE_LOADER_jupyterlab-monaco-json.worker.bundle.js';
-import * as monacoTS from 'file-loader!../lib/JUPYTERLAB_FILE_LOADER_jupyterlab-monaco-ts.worker.bundle.js';
+import * as monacoCSS from 'file-loader!../lib/css.worker.bundle.js';
+import * as monacoEditor from 'file-loader!../lib/editor.worker.bundle.js';
+import * as monacoHTML from 'file-loader!../lib/html.worker.bundle.js';
+import * as monacoJSON from 'file-loader!../lib/json.worker.bundle.js';
+import * as monacoTS from 'file-loader!../lib/ts.worker.bundle.js';
 
 import { getLanguageService, TextDocument } from "vscode-json-languageservice";
 import { listen, MessageConnection } from 'vscode-ws-jsonrpc';
@@ -133,20 +133,31 @@ class MonacoWidget extends Widget implements DocumentRegistry.IReadyWidget {
     this.title.closable = true;
     this.context = context;
 
-    context.ready.then(() => { this._onContextReady(); });
     let content = context.model.toString();
     let uri = monaco.Uri.parse(context.path);
-    let editor = monaco.editor.create(this.node, {
-      language: LANGUAGE,
-      model: monaco.editor.createModel(content, LANGUAGE, uri),
+
+    let monaco_model = undefined;
+    if(monaco.editor.getModel(uri)) {
+      monaco_model = monaco.editor.getModel(uri);
+    } else {
+      monaco_model = monaco.editor.createModel(content, LANGUAGE, uri);
+    }
+
+    this.editor = monaco.editor.create(this.node, {
+      model: monaco_model,
       glyphMargin: true,
       lightbulb: {
         enabled: true
       }
     });
-    this.editor = editor;
 
-    const services = createMonacoServices(editor);
+    monaco_model.onDidChangeContent((event) => {
+      this.context.model.value.text = this.editor.getValue();
+    });
+
+    context.ready.then(() => { this._onContextReady(); });
+
+    const services = createMonacoServices(this.editor);
     function createLanguageClient(connection: MessageConnection): BaseLanguageClient {
       return new BaseLanguageClient({
         name: "Sample Language Client",
@@ -169,21 +180,22 @@ class MonacoWidget extends Widget implements DocumentRegistry.IReadyWidget {
       })
     }
 
-// create the web socket
-//const url = createUrl('/com.ibm.wala.cast.lsp.tomcat/endpoint')
-//const webSocket = createWebSocket(url);
-//const webSocket = createWebSocket('ws://localhost:8080/WebSocketServerExample/websocketendpoint');
-const webSocket = createWebSocket('ws://localhost:8080/com.ibm.wala.cast.lsp.tomcat/websocket');
-// listen when the web socket is opened
-listen({
-    webSocket,
-    onConnection: connection => {
-        // create and start the language client
-        const languageClient = createLanguageClient(connection);
-        const disposable = languageClient.start();
-        connection.onClose(() => disposable.dispose());
-    }
-});
+    // create the web socket
+    //const url = createUrl('/com.ibm.wala.cast.lsp.tomcat/endpoint')
+    //const webSocket = createWebSocket(url);
+    //const webSocket = createWebSocket('ws://localhost:8080/WebSocketServerExample/websocketendpoint');
+    const webSocket = createWebSocket('ws://localhost:8080/com.ibm.wala.cast.lsp.tomcat/websocket');
+    // listen when the web socket is opened
+    listen({
+	webSocket,
+    	onConnection:
+	  connection => {
+            // create and start the language client
+            const languageClient = createLanguageClient(connection);
+            const disposable = languageClient.start();
+            connection.onClose(() => disposable.dispose());
+    	   }
+    });
   }
 
   /**
