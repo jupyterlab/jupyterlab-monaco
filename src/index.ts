@@ -13,20 +13,26 @@ import {
   JupyterLab, JupyterLabPlugin
 } from '@jupyterlab/application';
 
+
 import {
   ICommandPalette
 } from '@jupyterlab/apputils';
 
 import {
-  uuid, PathExt
+  PathExt
 } from '@jupyterlab/coreutils';
+
+import {
+  ABCWidgetFactory, DocumentRegistry, IDocumentWidget, DocumentWidget
+} from '@jupyterlab/docregistry';
 
 import {
   IEditorTracker
 } from '@jupyterlab/fileeditor';
 
 import {
-  PromiseDelegate
+  PromiseDelegate,
+  UUID
 } from '@phosphor/coreutils';
 
 import {
@@ -63,13 +69,13 @@ let URLS: {[key: string]: string} = {
 * An monaco widget.
 */
 export
-class MonacoWidget extends Widget implements DocumentRegistry.IReadyWidget {
+class MonacoWidget extends Widget {
   /**
    * Construct a new Monaco widget.
    */
   constructor(context: DocumentRegistry.CodeContext) {
     super();
-    this.id = uuid();
+    this.id = UUID.uuid4();
     this.title.label = PathExt.basename(context.localPath);
     this.title.closable = true;
     this.context = context;
@@ -146,22 +152,20 @@ class MonacoWidget extends Widget implements DocumentRegistry.IReadyWidget {
   editor: monaco.editor.IStandaloneCodeEditor;
 }
 
-import {
-  ABCWidgetFactory, DocumentRegistry
-} from '@jupyterlab/docregistry';
-
 
 /**
  * A widget factory for editors.
  */
 export
-class MonacoEditorFactory extends ABCWidgetFactory<MonacoWidget, DocumentRegistry.ICodeModel> {
+class MonacoEditorFactory extends ABCWidgetFactory<IDocumentWidget<MonacoWidget>, DocumentRegistry.ICodeModel> {
 
   /**
    * Create a new widget given a context.
    */
-  protected createNewWidget(context: DocumentRegistry.CodeContext): MonacoWidget {
-    return new MonacoWidget(context);
+  protected createNewWidget(context: DocumentRegistry.CodeContext): IDocumentWidget<MonacoWidget> {
+    const content = new MonacoWidget(context);
+    const widget = new DocumentWidget({ content, context });
+    return widget;
   }
 }
 
