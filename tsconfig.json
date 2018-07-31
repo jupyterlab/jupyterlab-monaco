@@ -1,16 +1,15 @@
 {
   "compilerOptions": {
     "declaration": true,
-    //"noImplicitAny": true,
+    "noImplicitAny": true,
     "noEmitOnError": true,
     "noUnusedLocals": true,
     "module": "commonjs",
     "moduleResolution": "node",
-    "target": "es5",
-    "outDir": "./lib",
-    "lib": ["es5", "dom"],
+    "target": "es2015",
+    "lib": ["dom", "es2015"],
     "types": [],
-    "baseUrl": "./lib"
+    "outDir": "./lib"
   },
   "include": ["src/*"]
 }
