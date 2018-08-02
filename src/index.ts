@@ -22,7 +22,7 @@ import {
 } from '@jupyterlab/apputils';
 
 import {
-  uuid, PathExt
+  PathExt, ISettingRegistry
 } from '@jupyterlab/coreutils';
 
 import {
@@ -30,7 +30,7 @@ import {
 } from '@jupyterlab/fileeditor';
 
 import {
-  PromiseDelegate
+  UUID, PromiseDelegate
 } from '@phosphor/coreutils';
 
 import {
@@ -128,7 +128,7 @@ class MonacoWidget extends Widget implements DocumentRegistry.IReadyWidget {
    */
   constructor(context: DocumentRegistry.CodeContext) {
     super();
-    this.id = uuid();
+    this.id = UUID.uuid4();
     this.title.label = PathExt.basename(context.localPath);
     this.title.closable = true;
     this.context = context;
@@ -278,9 +278,8 @@ class MonacoEditorFactory extends ABCWidgetFactory<MonacoWidget, DocumentRegistr
 const extension: JupyterLabPlugin<void> = {
   id: 'jupyterlab-monaco',
   autoStart: true,
-  requires: [ICommandPalette, IEditorTracker],
-  activate: (app: JupyterLab, palette: ICommandPalette, editorTracker: IEditorTracker) => {
-
+  requires: [ISettingRegistry, ICommandPalette, IEditorTracker],
+  activate: async (app: JupyterLab, registry: ISettingRegistry, palette: ICommandPalette, editorTracker: IEditorTracker) => {
     const factory = new MonacoEditorFactory({
       name: 'Monaco Editor',
       fileTypes: ['*'],
