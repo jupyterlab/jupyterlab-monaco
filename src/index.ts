@@ -126,7 +126,7 @@ class MonacoWidget extends Widget implements DocumentRegistry.IReadyWidget {
   /**
    * Construct a new Monaco widget.
    */
-  constructor(context: DocumentRegistry.CodeContext) {
+  constructor(context: DocumentRegistry.CodeContext, lspServer: string) {
     super();
     this.id = UUID.uuid4();
     this.title.label = PathExt.basename(context.localPath);
@@ -184,7 +184,8 @@ class MonacoWidget extends Widget implements DocumentRegistry.IReadyWidget {
     //const url = createUrl('/com.ibm.wala.cast.lsp.tomcat/endpoint')
     //const webSocket = createWebSocket(url);
     //const webSocket = createWebSocket('ws://localhost:8080/WebSocketServerExample/websocketendpoint');
-    const webSocket = createWebSocket('ws://localhost:8080/com.ibm.wala.cast.lsp.tomcat/websocket');
+    //const webSocket = createWebSocket('ws://localhost:8080/com.ibm.wala.cast.lsp.tomcat/websocket');
+    const webSocket = createWebSocket(lspServer);
     // listen when the web socket is opened
     listen({
 	webSocket,
@@ -259,12 +260,21 @@ import {
  */
 export
 class MonacoEditorFactory extends ABCWidgetFactory<MonacoWidget, DocumentRegistry.ICodeModel> {
+  public lspServer: string;
 
+  constructor(a, b: ISettingRegistry) {
+    super(a);
+    b.load('@jupyterlab/shortcuts-extension:plugin').then((stuff: ISettingRegistry.ISettings) => {
+      this.lspServer = "" + stuff.composite['lspServer'];
+      console.log(stuff.composite['lspServer']);
+    });
+  }
+  
   /**
    * Create a new widget given a context.
    */
   protected createNewWidget(context: DocumentRegistry.CodeContext): MonacoWidget {
-    return new MonacoWidget(context);
+    return new MonacoWidget(context, this.lspServer);
   }
 }
 
@@ -284,7 +294,7 @@ const extension: JupyterLabPlugin<void> = {
       name: 'Monaco Editor',
       fileTypes: ['*'],
       defaultFor: ['*']
-    });
+    }, registry);
     app.docRegistry.addWidgetFactory(factory);
 
     // Add an application command
