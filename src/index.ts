@@ -17,6 +17,7 @@ import {
   JupyterLab, JupyterLabPlugin
 } from '@jupyterlab/application';
 
+
 import {
   ICommandPalette
 } from '@jupyterlab/apputils';
@@ -24,6 +25,10 @@ import {
 import {
   PathExt, ISettingRegistry
 } from '@jupyterlab/coreutils';
+
+import {
+  ABCWidgetFactory, DocumentRegistry, IDocumentWidget, DocumentWidget
+} from '@jupyterlab/docregistry';
 
 import {
   IEditorTracker
@@ -52,7 +57,7 @@ import {
     BaseLanguageClient, CloseAction, ErrorAction,
     createMonacoServices, createConnection
 } from 'monaco-languageclient';
-import normalizeUrl = require('normalize-url');
+
 const ReconnectingWebSocket = require('reconnecting-websocket');
 
 let URLS: {[key: string]: string} = {
@@ -92,11 +97,6 @@ function createDocument(model: monaco.editor.ITextModel) {
     return TextDocument.create(model.uri.toString(), model.getModeId(), model.getVersionId(), model.getValue());
 }
 
-function createUrl(path: string): string {
-    const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-    return normalizeUrl(`${protocol}://${location.host}${location.pathname}${path}`);
-}
-
 function createWebSocket(url: string): WebSocket {
     const socketOptions = {
         maxReconnectionDelay: 10000,
@@ -122,7 +122,7 @@ monaco.languages.register({
 * An monaco widget.
 */
 export
-class MonacoWidget extends Widget implements DocumentRegistry.IReadyWidget {
+class MonacoWidget extends Widget {
   /**
    * Construct a new Monaco widget.
    */
@@ -181,10 +181,6 @@ class MonacoWidget extends Widget implements DocumentRegistry.IReadyWidget {
     }
 
     // create the web socket
-    //const url = createUrl('/com.ibm.wala.cast.lsp.tomcat/endpoint')
-    //const webSocket = createWebSocket(url);
-    //const webSocket = createWebSocket('ws://localhost:8080/WebSocketServerExample/websocketendpoint');
-    //const webSocket = createWebSocket('ws://localhost:8080/com.ibm.wala.cast.lsp.tomcat/websocket');
     const webSocket = createWebSocket(lspServer);
     // listen when the web socket is opened
     listen({
@@ -250,19 +246,16 @@ class MonacoWidget extends Widget implements DocumentRegistry.IReadyWidget {
   editor: monaco.editor.IStandaloneCodeEditor;
 }
 
-import {
-  ABCWidgetFactory, DocumentRegistry
-} from '@jupyterlab/docregistry';
-
 
 /**
  * A widget factory for editors.
  */
 export
-class MonacoEditorFactory extends ABCWidgetFactory<MonacoWidget, DocumentRegistry.ICodeModel> {
-  public lspServer: string;
 
-  constructor(a, b: ISettingRegistry) {
+class MonacoEditorFactory extends ABCWidgetFactory<IDocumentWidget<MonacoWidget>, DocumentRegistry.ICodeModel> {
+  private lspServer: string;
+  
+  constructor(a: any, b: ISettingRegistry) {
     super(a);
     b.load('@jupyterlab/shortcuts-extension:plugin').then((stuff: ISettingRegistry.ISettings) => {
       this.lspServer = "" + stuff.composite['lspServer'];
@@ -273,8 +266,10 @@ class MonacoEditorFactory extends ABCWidgetFactory<MonacoWidget, DocumentRegistr
   /**
    * Create a new widget given a context.
    */
-  protected createNewWidget(context: DocumentRegistry.CodeContext): MonacoWidget {
-    return new MonacoWidget(context, this.lspServer);
+  protected createNewWidget(context: DocumentRegistry.CodeContext): IDocumentWidget<MonacoWidget> {
+    const content = new MonacoWidget(context, this.lspServer);
+    const widget = new DocumentWidget({ content, context });
+    return widget;
   }
 }
 
