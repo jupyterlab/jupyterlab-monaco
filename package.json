@@ -30,10 +30,10 @@
     "watch": "tsc -w"
   },
   "dependencies": {
-    "@jupyterlab/application": "^0.17.2",
-    "@jupyterlab/apputils": "^0.17.2",
+    "@jupyterlab/application": "^0.18.0",
+    "@jupyterlab/apputils": "^0.18.0",
     "@jupyterlab/coreutils": "^2.0.2",
-    "@jupyterlab/fileeditor": "^0.17.2",
+    "@jupyterlab/fileeditor": "^0.18.0",
     "monaco-editor": "^0.13.1"
   },
   "devDependencies": {
