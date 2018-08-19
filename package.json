@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "@jupyterlab/application": "^0.18.0",
-    "@jupyterlab/apputils": "^0.18.-",
+    "@jupyterlab/apputils": "^0.18.0",
     "@jupyterlab/coreutils": "^2.0.2",
     "@jupyterlab/fileeditor": "^0.18.0",
     "monaco-editor": "^0.13.1"
