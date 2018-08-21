@@ -143,6 +143,8 @@ class MonacoWidget extends Widget {
       monaco_model = monaco.editor.createModel(content, LANGUAGE, uri);
     }
 
+    monaco.editor.setModelLanguage(monaco_model, "python");
+
     this.editor = monaco.editor.create(this.node, {
       model: monaco_model,
       glyphMargin: true,
@@ -151,7 +153,8 @@ class MonacoWidget extends Widget {
       }
     });
 
-    monaco_model.onDidChangeContent((event) => {
+    var mm = this.editor.getModel();
+    mm.onDidChangeContent((event) => {
       this.context.model.value.text = this.editor.getValue();
     });
 
@@ -255,12 +258,9 @@ export
 class MonacoEditorFactory extends ABCWidgetFactory<IDocumentWidget<MonacoWidget>, DocumentRegistry.ICodeModel> {
   private lspServer: string;
   
-  constructor(a: any, b: ISettingRegistry) {
+  constructor(a: any, b: string) {
     super(a);
-    b.load('@jupyterlab/shortcuts-extension:plugin').then((stuff: ISettingRegistry.ISettings) => {
-      this.lspServer = "" + stuff.composite['lspServer'];
-      console.log(stuff.composite['lspServer']);
-    });
+    this.lspServer = b;
   }
   
   /**
@@ -281,15 +281,19 @@ class MonacoEditorFactory extends ABCWidgetFactory<IDocumentWidget<MonacoWidget>
  * 'defaultFor' runs *after* the file editors defaultFor.
  */
 const extension: JupyterLabPlugin<void> = {
-  id: 'jupyterlab-monaco',
+  id: 'jupyterlab-monaco:plugin',
   autoStart: true,
   requires: [ISettingRegistry, ICommandPalette, IEditorTracker],
   activate: async (app: JupyterLab, registry: ISettingRegistry, palette: ICommandPalette, editorTracker: IEditorTracker) => {
+    const settings = await registry.load(extension.id);
+    const server = settings.composite['lspServer'] as string;
+    console.log("starting " + extension.id + " with " +  server);
+
     const factory = new MonacoEditorFactory({
       name: 'Monaco Editor',
       fileTypes: ['*'],
       defaultFor: ['*']
-    }, registry);
+    }, server);
     app.docRegistry.addWidgetFactory(factory);
 
     // Add an application command
