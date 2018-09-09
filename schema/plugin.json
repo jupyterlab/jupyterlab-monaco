@@ -6,8 +6,8 @@
   "properties": {
     "lspServer": {
 	"type": "string",
-	"description": "The configuration specific to Monaco editors.",
-	"default": "ws://localhost:8080/com.ibm.wala.cast.lsp.tomcat/websocket"
+	"description": "The LSP server for Monaco editors.",
+	"default": "ws://localhost:8080/wala-ariadne/websocket"
     }
   },
   "additionalProperties": false,
