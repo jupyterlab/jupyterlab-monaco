@@ -44,58 +44,13 @@ import {
 
 import '../style/index.css';
 
-import * as monacoCSS from 'file-loader!../lib/css.worker.bundle.js';
-import * as monacoEditor from 'file-loader!../lib/editor.worker.bundle.js';
-import * as monacoHTML from 'file-loader!../lib/html.worker.bundle.js';
-import * as monacoJSON from 'file-loader!../lib/json.worker.bundle.js';
-import * as monacoTS from 'file-loader!../lib/ts.worker.bundle.js';
-
-import { getLanguageService, TextDocument } from "vscode-json-languageservice";
 import { listen, MessageConnection } from 'vscode-ws-jsonrpc';
 import {
-    MonacoToProtocolConverter, ProtocolToMonacoConverter,
     BaseLanguageClient, CloseAction, ErrorAction,
     createMonacoServices, createConnection
 } from 'monaco-languageclient';
 
 const ReconnectingWebSocket = require('reconnecting-websocket');
-
-let URLS: {[key: string]: string} = {
-  css: monacoCSS,
-  html: monacoHTML,
-  javascript: monacoTS,
-  json: monacoJSON,
-  typescript: monacoTS
-};
-
-(self as any).MonacoEnvironment = {
-  getWorkerUrl: function (moduleId: string, label: string): string {
-    let url = URLS[label] || monacoEditor;
-    return url;
-  }
-}
-
-function resovleSchema(url: string): Promise<string> {
-    const promise = new Promise<string>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.onload = () => resolve(xhr.responseText);
-        xhr.onerror = () => reject(xhr.statusText);
-        xhr.open("GET", url, true);
-        xhr.send();
-    });
-    return promise;
-}
-
-const m2p = new MonacoToProtocolConverter();
-const p2m = new ProtocolToMonacoConverter();
-const jsonService = getLanguageService({
-//  schemaRequestService: resovleSchema
-  });
-const pendingValidationRequests = new Map<string, number>();
-
-function createDocument(model: monaco.editor.ITextModel) {
-    return TextDocument.create(model.uri.toString(), model.getModeId(), model.getVersionId(), model.getValue());
-}
 
 function createWebSocket(url: string): WebSocket {
     const socketOptions = {

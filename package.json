@@ -26,7 +26,7 @@
     "url": "https://github.com/jasongrout/jupyterlab_monaco.git"
   },
   "scripts": {
-    "build": "webpack && tsc",
+    "build": "tsc && webpack",
     "clean": "rimraf lib",
     "watch": "tsc -w"
   },
@@ -36,24 +36,22 @@
     "@jupyterlab/coreutils": "^2.0.2",
     "@jupyterlab/fileeditor": "^0.18.0",
     "cors-anywhere": "^0.4.1",
-    "monaco-editor": "^0.14.3",
+    "monaco-editor-core": "^0.14.6",
     "monaco-languageclient": "^0.6.3",
-    "monaco-languages": "^1.5.1",
     "net": "^1.0.2",
-    "nodejs": "^0.0.0",
     "normalize-url": "^2.0.1",
     "reconnecting-websocket": "^3.2.2",
-    "vscode-languageclient": "^4.4.0",
-    "vscode-json-languageservice": "^3.1.0",
-    "vscode-languageserver-types": "^3.7.0",
     "vscode-ws-jsonrpc": "^0.0.2-1"
   },
   "devDependencies": {
     "@types/node": "^7.0.12",
+    "css-loader": "^1.0.0",
+    "style-loader": "^0.23.0",
     "rimraf": "^2.6.1",
+    "style-loader": "^0.23.0",
     "typescript": "~2.6.0",
     "webpack": "^4.6.0",
-      "webpack-cli": "^2.0.14"
+    "webpack-cli": "^2.0.14"
   },
   "jupyterlab": {
     "extension": true,
