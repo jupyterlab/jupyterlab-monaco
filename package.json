@@ -16,7 +16,8 @@
   "author": "Project Jupyter",
   "files": [
     "lib/**/*.{d.ts,eot,gif,html,jpg,js,js.map,json,png,svg,woff2,ttf}",
-    "style/**/*.{css,eot,gif,html,jpg,json,png,svg,woff2,ttf}"
+    "style/**/*.{css,eot,gif,html,jpg,json,png,svg,woff2,ttf}",
+    "schema/*.json"
   ],
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -30,19 +31,30 @@
     "watch": "tsc -w"
   },
   "dependencies": {
-    "@jupyterlab/application": "^0.18.0",
-    "@jupyterlab/apputils": "^0.18.0",
+    "@jupyterlab/application": "^0.18.2",
+    "@jupyterlab/apputils": "^0.18.2",
     "@jupyterlab/coreutils": "^2.0.2",
     "@jupyterlab/fileeditor": "^0.18.0",
-    "monaco-editor": "^0.13.1"
+    "cors-anywhere": "^0.4.1",
+    "monaco-editor-core": "^0.14.6",
+    "monaco-languageclient": "^0.6.3",
+    "net": "^1.0.2",
+    "normalize-url": "^2.0.1",
+    "reconnecting-websocket": "^3.2.2",
+    "vscode-ws-jsonrpc": "^0.0.2-1"
   },
   "devDependencies": {
+    "@types/node": "^7.0.12",
+    "css-loader": "^1.0.0",
+    "style-loader": "^0.23.0",
     "rimraf": "^2.6.1",
+    "style-loader": "^0.23.0",
     "typescript": "~2.6.0",
     "webpack": "^4.6.0",
     "webpack-cli": "^2.0.14"
   },
   "jupyterlab": {
-    "extension": true
+    "extension": true,
+    "schemaDir": "schema"
   }
 }

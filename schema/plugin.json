@@ -1,0 +1,15 @@
+{
+  "jupyter.lab.setting-icon-class": "jp-TextEditorIcon",
+  "jupyter.lab.setting-icon-label": "Editor",
+  "title": "Monaco Editor",
+  "description": "Monaco editor settings.",
+  "properties": {
+    "lspServer": {
+	"type": "string",
+	"description": "The LSP server for Monaco editors.",
+	"default": "ws://localhost:8080/wala-ariadne/websocket"
+    }
+  },
+  "additionalProperties": false,
+  "type": "object"
+}

@@ -9,6 +9,10 @@
  *
  */
 
+const LANGUAGE = "python"
+
+require('monaco-editor-core');
+
 import {
   JupyterLab, JupyterLabPlugin
 } from '@jupyterlab/application';
@@ -19,7 +23,7 @@ import {
 } from '@jupyterlab/apputils';
 
 import {
-  PathExt
+  PathExt, ISettingRegistry
 } from '@jupyterlab/coreutils';
 
 import {
@@ -31,39 +35,51 @@ import {
 } from '@jupyterlab/fileeditor';
 
 import {
-  PromiseDelegate,
-  UUID
+  UUID, PromiseDelegate
 } from '@phosphor/coreutils';
 
 import {
   Widget
 } from '@phosphor/widgets';
 
-import * as monaco from 'monaco-editor';
-
 import '../style/index.css';
 
-import * as monacoCSS from 'file-loader!../lib/css.worker.bundle.js';
 import * as monacoEditor from 'file-loader!../lib/editor.worker.bundle.js';
-import * as monacoHTML from 'file-loader!../lib/html.worker.bundle.js';
-import * as monacoJSON from 'file-loader!../lib/json.worker.bundle.js';
-import * as monacoTS from 'file-loader!../lib/ts.worker.bundle.js';
-
-
-let URLS: {[key: string]: string} = {
-  css: monacoCSS,
-  html: monacoHTML,
-  javascript: monacoTS,
-  json: monacoJSON,
-  typescript: monacoTS
-};
 
 (self as any).MonacoEnvironment = {
   getWorkerUrl: function (moduleId: string, label: string): string {
-    let url = URLS[label] || monacoEditor;
-    return url;
+    return monacoEditor;
   }
 }
+
+import { listen, MessageConnection } from 'vscode-ws-jsonrpc';
+import {
+    BaseLanguageClient, CloseAction, ErrorAction,
+    createMonacoServices, createConnection
+} from 'monaco-languageclient';
+
+const ReconnectingWebSocket = require('reconnecting-websocket');
+
+function createWebSocket(url: string): WebSocket {
+    const socketOptions = {
+        maxReconnectionDelay: 10000,
+        minReconnectionDelay: 1000,
+        reconnectionDelayGrowFactor: 1.3,
+        connectionTimeout: 10000,
+        maxRetries: Infinity,
+        debug: false
+    };
+    return new ReconnectingWebSocket(url, undefined, socketOptions);
+}
+
+// register the Python language with Monaco
+monaco.languages.register({
+	id: LANGUAGE,
+    	extensions: ['.py'],
+    	aliases: ['Python', 'PYTHON', 'py'],
+    	mimetypes: ['text/plain']
+});
+
 
 /**
 * An monaco widget.
@@ -73,7 +89,7 @@ class MonacoWidget extends Widget {
   /**
    * Construct a new Monaco widget.
    */
-  constructor(context: DocumentRegistry.CodeContext) {
+  constructor(context: DocumentRegistry.CodeContext, lspServer: string) {
     super();
     this.id = UUID.uuid4();
     this.title.label = PathExt.basename(context.localPath);
@@ -87,18 +103,62 @@ class MonacoWidget extends Widget {
     if(monaco.editor.getModel(uri)) {
       monaco_model = monaco.editor.getModel(uri);
     } else {
-      monaco_model = monaco.editor.createModel(content, undefined, uri);
+      monaco_model = monaco.editor.createModel(content, LANGUAGE, uri);
     }
 
+    monaco.editor.setModelLanguage(monaco_model, "python");
+
     this.editor = monaco.editor.create(this.node, {
-      model: monaco_model
+      model: monaco_model,
+      glyphMargin: true,
+      lightbulb: {
+        enabled: true
+      }
     });
 
-    monaco_model.onDidChangeContent((event) => {
+    var mm = this.editor.getModel();
+    mm.onDidChangeContent((event) => {
       this.context.model.value.text = this.editor.getValue();
     });
 
     context.ready.then(() => { this._onContextReady(); });
+
+    const services = createMonacoServices(this.editor);
+    function createLanguageClient(connection: MessageConnection): BaseLanguageClient {
+      return new BaseLanguageClient({
+        name: "Sample Language Client",
+        clientOptions: {
+            // use a language id as a document selector
+            documentSelector: [LANGUAGE],
+            // disable the default error handler
+            errorHandler: {
+                error: () => ErrorAction.Continue,
+                closed: () => CloseAction.DoNotRestart
+            }
+        },
+        services,
+        // create a language client connection from the JSON RPC connection on demand
+        connectionProvider: {
+            get: (errorHandler, closeHandler) => {
+                return Promise.resolve(createConnection(connection, errorHandler, closeHandler))
+            }
+        }
+      })
+    }
+
+    // create the web socket
+    const webSocket = createWebSocket(lspServer);
+    // listen when the web socket is opened
+    listen({
+	webSocket,
+    	onConnection:
+	  connection => {
+            // create and start the language client
+            const languageClient = createLanguageClient(connection);
+            const disposable = languageClient.start();
+            connection.onClose(() => disposable.dispose());
+    	   }
+    });
   }
 
   /**
@@ -157,13 +217,20 @@ class MonacoWidget extends Widget {
  * A widget factory for editors.
  */
 export
-class MonacoEditorFactory extends ABCWidgetFactory<IDocumentWidget<MonacoWidget>, DocumentRegistry.ICodeModel> {
 
+class MonacoEditorFactory extends ABCWidgetFactory<IDocumentWidget<MonacoWidget>, DocumentRegistry.ICodeModel> {
+  private lspServer: string;
+  
+  constructor(a: any, b: string) {
+    super(a);
+    this.lspServer = b;
+  }
+  
   /**
    * Create a new widget given a context.
    */
   protected createNewWidget(context: DocumentRegistry.CodeContext): IDocumentWidget<MonacoWidget> {
-    const content = new MonacoWidget(context);
+    const content = new MonacoWidget(context, this.lspServer);
     const widget = new DocumentWidget({ content, context });
     return widget;
   }
@@ -177,16 +244,19 @@ class MonacoEditorFactory extends ABCWidgetFactory<IDocumentWidget<MonacoWidget>
  * 'defaultFor' runs *after* the file editors defaultFor.
  */
 const extension: JupyterLabPlugin<void> = {
-  id: 'jupyterlab-monaco',
+  id: 'jupyterlab-monaco:plugin',
   autoStart: true,
-  requires: [ICommandPalette, IEditorTracker],
-  activate: (app: JupyterLab, palette: ICommandPalette, editorTracker: IEditorTracker) => {
+  requires: [ISettingRegistry, ICommandPalette, IEditorTracker],
+  activate: async (app: JupyterLab, registry: ISettingRegistry, palette: ICommandPalette, editorTracker: IEditorTracker) => {
+    const settings = await registry.load(extension.id);
+    const server = settings.composite['lspServer'] as string;
+    console.log("starting " + extension.id + " with " +  server);
 
     const factory = new MonacoEditorFactory({
       name: 'Monaco Editor',
       fileTypes: ['*'],
       defaultFor: ['*']
-    });
+    }, server);
     app.docRegistry.addWidgetFactory(factory);
 
     // Add an application command
