@@ -1,9 +1,14 @@
+const path = require('path');
 const webpack = require('webpack');
 
 module.exports = {
   entry: {
-    "editor.worker": 'monaco-editor-core/esm/vs/editor/common/services/editorSimpleWorker.js',
-    "index.ts": './lib/index.js'
+    "editor.worker": 'monaco-editor-core/esm/vs/editor/editor.worker.js'
+  },
+  output: {
+    filename: '[name].bundle.js',
+    path: path.resolve(__dirname, 'lib'),
+    globalObject: 'self'
   },
   module: {
     rules: [{

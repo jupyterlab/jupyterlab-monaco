@@ -44,6 +44,14 @@ import {
 
 import '../style/index.css';
 
+import * as monacoEditor from 'file-loader!../lib/editor.worker.bundle.js';
+
+(self as any).MonacoEnvironment = {
+  getWorkerUrl: function (moduleId: string, label: string): string {
+    return monacoEditor;
+  }
+}
+
 import { listen, MessageConnection } from 'vscode-ws-jsonrpc';
 import {
     BaseLanguageClient, CloseAction, ErrorAction,
