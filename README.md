@@ -77,7 +77,7 @@ A list of available language server implementation is available [there](https://
 Feel free to take a look at the [Python example](https://github.com/fcollonval/jupyter_python_languageserver) to code your own notebook server extension.
 
 The important point is the default endpoint. The editor will open by default a websocket
-to the following address: `jupyterlabWsUrl + "/lsp/" + MonacoLanguageId`. For example for
+to the following address: `jupyterlabWsUrl + "lsp/" + MonacoLanguageId`. For example for
 python and in on a standard PC installation, `ws://localhost:8888/lsp/python`.
 
 Note: the websocket url can be overwritten in the extension settings. For example:

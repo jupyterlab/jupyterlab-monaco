@@ -154,8 +154,8 @@ export class MonacoWidget extends Widget {
     }
 
     let settings = ServerConnection.makeSettings();
-    // Default address for language server is JLab_wsUrl + "/lsp/" + languageId
-    let wsurl = settings.wsUrl + "/lsp/" + languageId;
+    // Default address for language server is JLab_wsUrl + "lsp/" + languageId
+    let wsurl = settings.wsUrl + "lsp/" + languageId;
     if (lservers.hasOwnProperty(languageId)) {
       wsurl = lservers[languageId];
     }
