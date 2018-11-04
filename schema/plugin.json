@@ -4,10 +4,15 @@
   "title": "Monaco Editor",
   "description": "Monaco editor settings.",
   "properties": {
-    "lspServer": {
-	"type": "string",
-	"description": "The LSP server for Monaco editors.",
-	"default": "ws://localhost:8080/wala-ariadne/websocket"
+    "servers": {
+      "patternProperties": {
+        "[a-z\\-]+": { "type": "string" }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "title": "Language Servers",
+      "description": "Custom LSP servers for Monaco editor.",
+      "default": {}
     }
   },
   "additionalProperties": false,

@@ -5,6 +5,14 @@
  * TODO:
  *
  * - Hook up as an abstract editor? Or at least as another default editor
+ * - Websocket connection is not secured (to check)
+ * - socket connection is never closed - even when the file editor is closed
+ *    But a new websocket is created each time a file is (re)opened
+ *    => we multiply the number of server instance (for the Python LS example)
+ *    & => reopening a previously opened file results in an unusable editor
+ *   Note: Can we get inspiration from the terminal code?
+ * - Better theme integration with JLab
+ * - Add ability to open a console link to the file (like the classical editor)
  *
  */
 
@@ -25,6 +33,8 @@ import {
 
 import { IEditorTracker } from "@jupyterlab/fileeditor";
 
+import { ServerConnection } from "@jupyterlab/services";
+
 import { UUID, PromiseDelegate } from "@phosphor/coreutils";
 
 import { Widget } from "@phosphor/widgets";
@@ -39,7 +49,7 @@ import * as monacoEditor from "file-loader!../lib/editor.worker.bundle.js";
   }
 };
 
-// Load highlighting and grammar rules for supported languages
+// Load highlighting and grammar rules for supported languages - TODO json is not part of it.
 import "monaco-languages/release/esm/monaco.contribution.js";
 
 import { listen, MessageConnection } from "vscode-ws-jsonrpc";
@@ -65,6 +75,10 @@ function createWebSocket(url: string): WebSocket {
   return new ReconnectingWebSocket(url, undefined, socketOptions);
 }
 
+export interface ILanguageServers {
+  readonly [languageId: string]: string;
+}
+
 /**
  * An monaco widget.
  */
@@ -72,7 +86,10 @@ export class MonacoWidget extends Widget {
   /**
    * Construct a new Monaco widget.
    */
-  constructor(context: DocumentRegistry.CodeContext, lspServer: string) {
+  constructor(
+    context: DocumentRegistry.CodeContext,
+    lservers: ILanguageServers
+  ) {
     super();
     this.id = UUID.uuid4();
     this.title.label = PathExt.basename(context.localPath);
@@ -89,9 +106,9 @@ export class MonacoWidget extends Widget {
       // Editor picks up the language according to the uri
       monaco_model = monaco.editor.createModel(content, null, uri);
     }
-    // Get the Monaco Language Id
+    // Get the Monaco Language Id guessed from the uri
     const languageId = monaco_model.getModeId();
-    
+
     this.editor = monaco.editor.create(this.node, {
       model: monaco_model,
       glyphMargin: true,
@@ -136,8 +153,15 @@ export class MonacoWidget extends Widget {
       });
     }
 
+    let settings = ServerConnection.makeSettings();
+    // Default address for language server is JLab_wsUrl + "/lsp/" + languageId
+    let wsurl = settings.wsUrl + "/lsp/" + languageId;
+    if (lservers.hasOwnProperty(languageId)) {
+      wsurl = lservers[languageId];
+    }
+
     // create the web socket
-    const webSocket = createWebSocket(lspServer);
+    const webSocket = createWebSocket(wsurl);
     // listen when the web socket is opened
     listen({
       webSocket,
@@ -211,11 +235,11 @@ export class MonacoEditorFactory extends ABCWidgetFactory<
   IDocumentWidget<MonacoWidget>,
   DocumentRegistry.ICodeModel
 > {
-  private lspServer: string;
+  private lservers: ILanguageServers;
 
-  constructor(a: any, b: string) {
+  constructor(a: any, b: ILanguageServers) {
     super(a);
-    this.lspServer = b;
+    this.lservers = b;
   }
 
   /**
@@ -224,7 +248,7 @@ export class MonacoEditorFactory extends ABCWidgetFactory<
   protected createNewWidget(
     context: DocumentRegistry.CodeContext
   ): IDocumentWidget<MonacoWidget> {
-    const content = new MonacoWidget(context, this.lspServer);
+    const content = new MonacoWidget(context, this.lservers);
     const widget = new DocumentWidget({ content, context });
     return widget;
   }
@@ -248,8 +272,8 @@ const extension: JupyterLabPlugin<void> = {
     editorTracker: IEditorTracker
   ) => {
     const settings = await registry.load(extension.id);
-    const server = settings.composite["lspServer"] as string;
-    console.log("starting " + extension.id + " with " + server);
+    const servers = settings.composite["servers"] as ILanguageServers;
+    console.log("starting " + extension.id);
 
     const factory = new MonacoEditorFactory(
       {
@@ -257,7 +281,7 @@ const extension: JupyterLabPlugin<void> = {
         fileTypes: ["*"],
         defaultFor: ["*"]
       },
-      server
+      servers
     );
     app.docRegistry.addWidgetFactory(factory);
 
