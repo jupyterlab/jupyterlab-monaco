@@ -6,11 +6,6 @@
  *
  * - Hook up as an abstract editor? Or at least as another default editor
  * - Websocket connection is not secured (to check)
- * - socket connection is never closed - even when the file editor is closed
- *    But a new websocket is created each time a file is (re)opened
- *    => we multiply the number of server instance (for the Python LS example)
- *    & => reopening a previously opened file results in an unusable editor
- *   Note: Can we get inspiration from the terminal code?
  * - Better theme integration with JLab
  * - Add ability to open a console link to the file (like the classical editor)
  *

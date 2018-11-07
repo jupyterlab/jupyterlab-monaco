@@ -19,11 +19,34 @@ Note: Colorization and configuration for bracketing, indent, comment and folding
 
 ## Prerequisites
 
-* JupyterLab 0.34
+* JupyterLab 0.35
+* monaco-languageclient 0.9.0
 
 ## Installation
 
-To test it with the Python Language Server:
+### Preliminary note
+
+Upgrading to monaco-languageclient 0.9.0 has some link to `vscode` and so tricks have been made:
+
+- in `tsconfig.json`: adding option `"skipLibCheck": true`
+- and in `webpack.config.js`: adding entry
+
+```js
+  resolve: {
+    alias: {
+      vscode: require.resolve("monaco-languageclient/lib/vscode-compatibility")
+    }
+  }
+```
+
+Therefore to install this extension in JupyterLab the same entry needs to be set in the JupyterLab
+`webpack.config.js` (located in `python_env\Lib\site-packages\jupyterlab\staging`).
+
+Those configurations were taken from https://github.com/TypeFox/monaco-languageclient/tree/master/example.
+
+### Test it
+
+To test it with the Python Language Server (after updating the webpack configuration file of JupyterLab):
 
 ```bash
 yarn install
@@ -32,9 +55,13 @@ jupyter labextension install .
 pip install jupyter_python_languageserver
 ```
 
+In my case the resulting *.js files where huge ( vendors~main.js == 14.4 MiB and its mapping 15.6 MiB). So you need to be patient at the start of JupyterLab. Anybody familiar with packing js code 
+is welcome to look at this.
+
 ## Development
 
-For a development install, do the following in the repository directory:
+For a development install, do the following in the repository directory (after updating the
+webpack configuration file see Installation):
 
 ```bash
 yarn install
@@ -63,11 +90,6 @@ The tricky thing about this repo is that we webpack up Monaco as part of the bui
 
 - [ ] Hook up as an abstract editor? Or at least as another default editor
 - [ ] Websocket connection is not secured (to check)
-- [ ] socket connection is never closed - even when the file editor is closed  
-   But a new websocket is created each time a file is (re)opened  
-   => we multiply the number of server instance (for the Python LS example)  
-   & => reopening a previously opened file results in an unusable editor  
-  Note: Can we get inspiration from the terminal code?
 - [ ] Better theme integration with JLab
 - [ ] Add ability to open a console link to the file (like the classical editor)
 
