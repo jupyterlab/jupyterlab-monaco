@@ -54,10 +54,10 @@ import "monaco-languages/release/esm/monaco.contribution.js";
 
 import { listen, MessageConnection } from "vscode-ws-jsonrpc";
 import {
-  BaseLanguageClient,
   CloseAction,
   ErrorAction,
-  createMonacoServices,
+  MonacoLanguageClient,
+  MonacoServices,
   createConnection
 } from "monaco-languageclient";
 
@@ -80,6 +80,106 @@ export interface ILanguageServers {
 }
 
 /**
+ * Language client manager
+ *
+ * A unique language client (and associated server) must be opened per programming language used
+ * whatever the number of widget containing an editor.
+ *
+ * This simple manager
+ */
+class LanguageManager {
+  protected readonly clients = new Set<string>();
+  private _lservers: ILanguageServers;
+
+  constructor(lspServers: ILanguageServers) {
+    this._lservers = lspServers;
+  }
+
+  protected getLanguageClient(
+    model: monaco.editor.ITextModel
+  ): MonacoLanguageClient {
+    // Get the Monaco Language Id guessed from the uri
+    const languageId = model.getModeId();
+    if (this.clients.has(languageId)) {
+      return; // Bail early
+    }
+
+    function createLanguageClient(
+      connection: MessageConnection
+    ): MonacoLanguageClient {
+      return new MonacoLanguageClient({
+        name: languageId + " Language Client",
+        clientOptions: {
+          // use a language id as a document selector
+          documentSelector: [languageId],
+          // disable the default error handler
+          errorHandler: {
+            error: () => ErrorAction.Continue,
+            closed: () => CloseAction.DoNotRestart
+          }
+        },
+        // create a language client connection from the JSON RPC connection on demand
+        connectionProvider: {
+          get: (errorHandler, closeHandler) => {
+            return Promise.resolve(
+              createConnection(connection, errorHandler, closeHandler)
+            );
+          }
+        }
+      });
+    }
+
+    let settings = ServerConnection.makeSettings();
+    // Default address for language server is JLab_wsUrl + "lsp/" + languageId
+    let wsurl = settings.wsUrl + "lsp/" + languageId;
+    if (this._lservers.hasOwnProperty(languageId)) {
+      wsurl = this._lservers[languageId];
+    }
+
+    // create the web socket
+    const webSocket = createWebSocket(wsurl);
+    this.clients.add(languageId);
+    let manager = this;
+    // listen when the web socket is opened
+    listen({
+      webSocket,
+      onConnection: connection => {
+        // create and start the language client
+        const languageClient = createLanguageClient(connection);
+        const disposable = languageClient.start();
+        connection.onClose(() => {
+          disposable.dispose();
+          manager.clients.delete(languageId);
+        });
+      }
+    });
+  }
+
+  /**
+   * Returns an code editor for the given model at the given DOM node.
+   */
+  public getEditor(
+    node: HTMLElement,
+    model: monaco.editor.ITextModel
+  ): monaco.editor.IStandaloneCodeEditor {
+    this.getLanguageClient(model);
+
+    const editor = monaco.editor.create(node, {
+      model: model,
+      glyphMargin: true,
+      lightbulb: {
+        enabled: true
+      }
+    });
+
+    // install Monaco language client services
+    MonacoServices.install(editor);
+
+    return editor;
+  }
+}
+
+/**
  * An monaco widget.
  */
 export class MonacoWidget extends Widget {
@@ -88,7 +188,7 @@ export class MonacoWidget extends Widget {
    */
   constructor(
     context: DocumentRegistry.CodeContext,
-    lservers: ILanguageServers
+    languageManager: LanguageManager
   ) {
     super();
     this.id = UUID.uuid4();
@@ -106,71 +206,16 @@ export class MonacoWidget extends Widget {
       // Editor picks up the language according to the uri
       monaco_model = monaco.editor.createModel(content, null, uri);
     }
-    // Get the Monaco Language Id guessed from the uri
-    const languageId = monaco_model.getModeId();
 
-    this.editor = monaco.editor.create(this.node, {
-      model: monaco_model,
-      glyphMargin: true,
-      lightbulb: {
-        enabled: true
-      }
-    });
+    this.editor = languageManager.getEditor(this.node, monaco_model);
 
-    var mm = this.editor.getModel();
+    let mm = this.editor.getModel();
     mm.onDidChangeContent(event => {
       this.context.model.value.text = this.editor.getValue();
     });
 
     context.ready.then(() => {
       this._onContextReady();
-    });
-
-    const services = createMonacoServices(this.editor);
-    function createLanguageClient(
-      connection: MessageConnection
-    ): BaseLanguageClient {
-      return new BaseLanguageClient({
-        name: "Sample Language Client",
-        clientOptions: {
-          // use a language id as a document selector
-          documentSelector: [languageId],
-          // disable the default error handler
-          errorHandler: {
-            error: () => ErrorAction.Continue,
-            closed: () => CloseAction.DoNotRestart
-          }
-        },
-        services,
-        // create a language client connection from the JSON RPC connection on demand
-        connectionProvider: {
-          get: (errorHandler, closeHandler) => {
-            return Promise.resolve(
-              createConnection(connection, errorHandler, closeHandler)
-            );
-          }
-        }
-      });
-    }
-
-    let settings = ServerConnection.makeSettings();
-    // Default address for language server is JLab_wsUrl + "lsp/" + languageId
-    let wsurl = settings.wsUrl + "lsp/" + languageId;
-    if (lservers.hasOwnProperty(languageId)) {
-      wsurl = lservers[languageId];
-    }
-
-    // create the web socket
-    const webSocket = createWebSocket(wsurl);
-    // listen when the web socket is opened
-    listen({
-      webSocket,
-      onConnection: connection => {
-        // create and start the language client
-        const languageClient = createLanguageClient(connection);
-        const disposable = languageClient.start();
-        connection.onClose(() => disposable.dispose());
-      }
     });
   }
 
@@ -235,11 +280,11 @@ export class MonacoEditorFactory extends ABCWidgetFactory<
   IDocumentWidget<MonacoWidget>,
   DocumentRegistry.ICodeModel
 > {
-  private lservers: ILanguageServers;
+  private _manager: LanguageManager;
 
-  constructor(a: any, b: ILanguageServers) {
+  constructor(a: any, lspServers: ILanguageServers) {
     super(a);
-    this.lservers = b;
+    this._manager = new LanguageManager(lspServers);
   }
 
   /**
@@ -248,7 +293,7 @@ export class MonacoEditorFactory extends ABCWidgetFactory<
   protected createNewWidget(
     context: DocumentRegistry.CodeContext
   ): IDocumentWidget<MonacoWidget> {
-    const content = new MonacoWidget(context, this.lservers);
+    const content = new MonacoWidget(context, this._manager);
     const widget = new DocumentWidget({ content, context });
     return widget;
   }
