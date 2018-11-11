@@ -13,7 +13,8 @@
       "title": "Language Servers",
       "description": "Custom LSP servers for Monaco editor.",
       "default": {}
-    }
+    },
+    "theme": { "type": "string", "title": "Theme", "default": "default" }
   },
   "additionalProperties": false,
   "type": "object"
