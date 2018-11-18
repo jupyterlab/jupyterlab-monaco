@@ -321,14 +321,16 @@ export class MonacoEditor implements CodeEditor.IEditor {
    * Undo one edit (if any undo events are stored).
    */
   undo(): void {
-    // TODO this.doc.undo();
+    // @ts-ignore
+    this.editor.getModel().undo();
   }
 
   /**
    * Redo one undone edit.
    */
   redo(): void {
-    // TODO this.doc.redo();
+    // @ts-ignore
+    this.editor.getModel().redo()
   }
 
   /**
