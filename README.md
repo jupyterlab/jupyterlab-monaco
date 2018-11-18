@@ -13,13 +13,55 @@ Feel free to head over to Monaco's repo and website to see what is and isn't pos
 | ![intellisense](./screenshots/intellisense.png) | ![minimap](./screenshots/minimap.png) |
 | ----------------------------------------------- | ------------------------------------- |
 
+The actual extension don't use the full monaco editor. But it rather builds on [monaco-languageclient](https://github.com/TypeFox/monaco-languageclient) to be easily extended through [Language Server](https://microsoft.github.io/language-server-protocol/). For example you can install the following package `jupyter_python_languageserver` through `pip` to connect to a local [Python Language Server](https://github.com/palantir/python-language-server).
+
+Note: Colorization and configuration for bracketing, indent, comment and folding are provided through the [monaco-languages](https://github.com/Microsoft/monaco-languages) package. One notably missing language is `JSON`.
+
 ## Prerequisites
 
-* JupyterLab 0.32
+* JupyterLab 0.35
+* monaco-languageclient 0.9.0
+
+## Installation
+
+### Preliminary note
+
+Upgrading to monaco-languageclient 0.9.0 has some link to `vscode` and so tricks have been made:
+
+- in `tsconfig.json`: adding option `"skipLibCheck": true`
+- and in `webpack.config.js`: adding entry
+
+```js
+  resolve: {
+    alias: {
+      vscode: require.resolve("monaco-languageclient/lib/vscode-compatibility")
+    }
+  }
+```
+
+Therefore to install this extension in JupyterLab the same entry needs to be set in the JupyterLab
+`webpack.config.js` (located in `python_env\Lib\site-packages\jupyterlab\staging`).
+
+Those configurations were taken from https://github.com/TypeFox/monaco-languageclient/tree/master/example.
+
+### Test it
+
+To test it with the Python Language Server (after updating the webpack configuration file of JupyterLab):
+
+```bash
+yarn install
+yarn run build
+jupyter labextension install .
+pip install jupyter_python_languageserver
+```
+
+In my case the resulting *.js files where huge ( vendors~main.js == 14.4 MiB and its mapping 15.6 MiB). So you need to be patient at the start of JupyterLab. Anybody familiar with packing js code 
+is welcome to look at this.
 
 ## Development
 
-For a development install, do the following in the repository directory:
+For a development install, do the following in the repository directory (after updating the
+webpack configuration file see Installation):
 
 ```bash
 yarn install
@@ -44,3 +86,29 @@ export NODE_OPTIONS=--max-old-space-size=4096
 
 The tricky thing about this repo is that we webpack up Monaco as part of the build process and publish those JavaScript files as part of the package. Because Monaco likes to use web workers to start up parts of the application, we must have standalone js files and a way to get the URL for those files in the final JupyterLab build. We get the URL in the extension by using the webpack file loader (triggered by prefixing an import with `file-loader!`) in the final JupyterLab build for the Monaco js files. Since we depend on the webpack file-loader npm package, we know that the JupyterLab build will have that loader available.
 
+###  TODO:
+
+- [ ] Hook up as an abstract editor? Or at least as another default editor
+- [ ] Websocket connection is not secured (to check)
+- [ ] Better theme integration with JLab
+- [ ] Add ability to open a console link to the file (like the classical editor)
+
+### Language server development
+
+A list of available language server implementation is available [there](https://microsoft.github.io/language-server-protocol/implementors/servers/). 
+Feel free to take a look at the [Python example](https://github.com/fcollonval/jupyter_python_languageserver) to code your own notebook server extension.
+
+The important point is the default endpoint. The editor will open by default a websocket
+to the following address: `jupyterlabWsUrl + "lsp/" + MonacoLanguageId`. For example for
+python and in on a standard PC installation, `ws://localhost:8888/lsp/python`.
+
+Note: the websocket url can be overwritten in the extension settings. For example:
+
+```javascript
+{
+    "servers": {
+        // Language Id : URL
+        "python": "ws://localhost:3000/python"
+    }
+}
+```

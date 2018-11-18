@@ -1,0 +1,21 @@
+{
+  "jupyter.lab.setting-icon-class": "jp-TextEditorIcon",
+  "jupyter.lab.setting-icon-label": "Editor",
+  "title": "Monaco Editor",
+  "description": "Monaco editor settings.",
+  "properties": {
+    "servers": {
+      "patternProperties": {
+        "[a-z\\-]+": { "type": "string" }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "title": "Language Servers",
+      "description": "Custom LSP servers for Monaco editor.",
+      "default": {}
+    },
+    "theme": { "type": "string", "title": "Theme", "default": "default" }
+  },
+  "additionalProperties": false,
+  "type": "object"
+}

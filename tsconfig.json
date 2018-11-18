@@ -9,7 +9,8 @@
     "target": "es2015",
     "lib": ["dom", "es2015"],
     "types": [],
-    "outDir": "./lib"
+    "outDir": "./lib",
+    "skipLibCheck": true
   },
   "include": ["src/*"]
 }

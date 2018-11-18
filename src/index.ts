@@ -1,212 +1,287 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
+import { IEditorServices } from "@jupyterlab/codeeditor";
+
+import { MonacoEditorFactory } from "./factory";
+
+import { MonacoMimeTypeService } from "./mimetype";
+
+import "../style/index.css";
+
+export * from "./editor";
+export * from "./factory";
+export * from "./mimetype";
+
+import { Menu } from "@phosphor/widgets";
+
+import { JupyterLab, JupyterLabPlugin } from "@jupyterlab/application";
+
+import { IMainMenu, IEditMenu } from "@jupyterlab/mainmenu";
+
+import { ISettingRegistry } from "@jupyterlab/coreutils";
+
+import { IDocumentWidget } from "@jupyterlab/docregistry";
+
+import { IEditorTracker, FileEditor } from "@jupyterlab/fileeditor";
+import { LanguagesManager } from "./languages";
+import { MonacoEditor } from "./editor";
+import { JSONObject } from "@phosphor/coreutils";
+
 /**
- * TODO:
- *
- * - Hook up as an abstract editor? Or at least as another default editor
- * - `monaco.languages.getLanguages()` contains all of the highlighting modes -
- *
+ * The command IDs used by the monaco plugin.
  */
+namespace CommandIDs {
+  export const changeTheme = "monaco:change-theme";
 
-import {
-  JupyterLab, JupyterLabPlugin
-} from '@jupyterlab/application';
+  export const changeMode = "monaco:change-mode";
 
+  export const find = "monaco:find";
 
-import {
-  ICommandPalette
-} from '@jupyterlab/apputils';
+  export const findAndReplace = "monaco:find-and-replace";
+}
 
-import {
-  PathExt
-} from '@jupyterlab/coreutils';
+/**
+ * The default language manager
+ */
+const manager = new LanguagesManager();
 
-import {
-  ABCWidgetFactory, DocumentRegistry, IDocumentWidget, DocumentWidget
-} from '@jupyterlab/docregistry';
-
-import {
-  IEditorTracker
-} from '@jupyterlab/fileeditor';
-
-import {
-  PromiseDelegate,
-  UUID
-} from '@phosphor/coreutils';
-
-import {
-  Widget
-} from '@phosphor/widgets';
-
-import * as monaco from 'monaco-editor';
-
-import '../style/index.css';
-
-import * as monacoCSS from 'file-loader!../lib/css.worker.bundle.js';
-import * as monacoEditor from 'file-loader!../lib/editor.worker.bundle.js';
-import * as monacoHTML from 'file-loader!../lib/html.worker.bundle.js';
-import * as monacoJSON from 'file-loader!../lib/json.worker.bundle.js';
-import * as monacoTS from 'file-loader!../lib/ts.worker.bundle.js';
-
-
-let URLS: {[key: string]: string} = {
-  css: monacoCSS,
-  html: monacoHTML,
-  javascript: monacoTS,
-  json: monacoJSON,
-  typescript: monacoTS
+/**
+ * The editor services.
+ */
+const services: JupyterLabPlugin<IEditorServices> = {
+  id: 'monaco-extension:services',
+  provides: IEditorServices,
+  activate: activateEditorServices
 };
 
-(self as any).MonacoEnvironment = {
-  getWorkerUrl: function (moduleId: string, label: string): string {
-    let url = URLS[label] || monacoEditor;
-    return url;
-  }
-}
-
 /**
-* An monaco widget.
-*/
-export
-class MonacoWidget extends Widget {
-  /**
-   * Construct a new Monaco widget.
-   */
-  constructor(context: DocumentRegistry.CodeContext) {
-    super();
-    this.id = UUID.uuid4();
-    this.title.label = PathExt.basename(context.localPath);
-    this.title.closable = true;
-    this.context = context;
-
-    let content = context.model.toString();
-    let uri = monaco.Uri.parse(context.path);
-
-    let monaco_model = undefined;
-    if(monaco.editor.getModel(uri)) {
-      monaco_model = monaco.editor.getModel(uri);
-    } else {
-      monaco_model = monaco.editor.createModel(content, undefined, uri);
-    }
-
-    this.editor = monaco.editor.create(this.node, {
-      model: monaco_model
-    });
-
-    monaco_model.onDidChangeContent((event) => {
-      this.context.model.value.text = this.editor.getValue();
-    });
-
-    context.ready.then(() => { this._onContextReady(); });
-  }
-
-  /**
-   * Handle actions that should be taken when the context is ready.
-   */
-  private _onContextReady(): void {
-    if (this.isDisposed) {
-      return;
-    }
-    const contextModel = this.context.model;
-
-    // Set the editor model value.
-    this.editor.setValue(contextModel.toString());
-
-    // Wire signal connections.
-    contextModel.contentChanged.connect(this._onContentChanged, this);
-
-    // Resolve the ready promise.
-    this._ready.resolve(undefined);
-  }
-
-  /**
-   * A promise that resolves when the file editor is ready.
-   */
-  get ready(): Promise<void> {
-    return this._ready.promise;
-  }
-
-  /**
-   * Handle a change in context model content.
-   */
-  private _onContentChanged(): void {
-    const oldValue = this.editor.getValue();
-    const newValue = this.context.model.toString();
-
-    if (oldValue !== newValue) {
-      this.editor.setValue(newValue);
-    }
-  }
-
-  onResize() {
-    this.editor.layout();
-  }
-
-  onAfterShow() {
-    this.editor.layout();
-  }
-
-  context: DocumentRegistry.CodeContext;
-  private _ready = new PromiseDelegate<void>();
-  editor: monaco.editor.IStandaloneCodeEditor;
-}
-
-
-/**
- * A widget factory for editors.
+ * The editor commands.
  */
-export
-class MonacoEditorFactory extends ABCWidgetFactory<IDocumentWidget<MonacoWidget>, DocumentRegistry.ICodeModel> {
+const commands: JupyterLabPlugin<void> = {
+  id: 'monaco-extension:commands',
+  requires: [IEditorTracker, IMainMenu, ISettingRegistry],
+  activate: activateEditorCommands,
+  autoStart: true
+};
+
+/**
+ * Export the plugins as default.
+ */
+const plugins: JupyterLabPlugin<any>[] = [commands, services];
+export default plugins;
+
+/**
+ * The plugin ID used as the key in the setting registry.
+ */
+const id = commands.id;
+
+/**
+ * Set up the editor services.
+ */
+function activateEditorServices(app: JupyterLab): IEditorServices {  
+  // TODO
+  // monaco.prototype.save = () => {
+  //   app.commands.execute('docmanager:save');
+  // };
 
   /**
-   * Create a new widget given a context.
+   * The default editor services.
    */
-  protected createNewWidget(context: DocumentRegistry.CodeContext): IDocumentWidget<MonacoWidget> {
-    const content = new MonacoWidget(context);
-    const widget = new DocumentWidget({ content, context });
-    return widget;
-  }
+  const editorServices: IEditorServices = {
+    factoryService: new MonacoEditorFactory(manager),
+    mimeTypeService: new MonacoMimeTypeService(manager)
+  };
+
+  return editorServices;
 }
 
 /**
- * Initialization data for the jupyterlab-monaco extension.
- *
- * #### Notes
- * The only reason we depend on the IEditorTracker is so that our docregistry
- * 'defaultFor' runs *after* the file editors defaultFor.
+ * Set up the editor widget menu, commands and services.
  */
-const extension: JupyterLabPlugin<void> = {
-  id: 'jupyterlab-monaco',
-  autoStart: true,
-  requires: [ICommandPalette, IEditorTracker],
-  activate: (app: JupyterLab, palette: ICommandPalette, editorTracker: IEditorTracker) => {
+function activateEditorCommands(
+  app: JupyterLab,
+  tracker: IEditorTracker,
+  mainMenu: IMainMenu,
+  settingRegistry: ISettingRegistry
+): void {
+  const { commands, restored } = app;
+  let { theme } = MonacoEditor.defaultConfig;
+  let servers = {};
 
-    const factory = new MonacoEditorFactory({
-      name: 'Monaco Editor',
-      fileTypes: ['*'],
-      defaultFor: ['*']
-    });
-    app.docRegistry.addWidgetFactory(factory);
+  /**
+   * Update the setting values.
+   */
+  function updateSettings(settings: ISettingRegistry.ISettings): void {
+    theme = (settings.get("theme").composite as string | null) || theme;
+    servers = (settings.get("servers").composite as JSONObject | null) || servers;
+    manager.languageServers = servers;
+  }
 
-    // Add an application command
-    const command: string = 'monaco:open';
-    app.commands.addCommand(command, {
-      label: 'Monaco Editor',
-      execute: () => {
-        let widget = new Widget();
-        widget.node.innerHTML = 'Creating new files coming...'
-        //let widget = new MonacoWidget();
-        app.shell.addToMainArea(widget);
-
-        // Activate the widget
-        app.shell.activateById(widget.id);
+  /**
+   * Update the settings of the current tracker instances.
+   */
+  function updateTracker(): void {
+    tracker.forEach(widget => {
+      if (widget.content.editor instanceof MonacoEditor) {
+        monaco.editor.setTheme(theme);
       }
     });
-
-    // Add the command to the palette.
-    palette.addItem({ command, category: 'Monaco' });
   }
-};
 
-export default extension;
+  // Fetch the initial state of the settings.
+  Promise.all([settingRegistry.load(id), restored])
+    .then(([settings]) => {
+      updateSettings(settings);
+      updateTracker();
+      settings.changed.connect(() => {
+        updateSettings(settings);
+        updateTracker();
+      });
+    })
+    .catch((reason: Error) => {
+      console.error(reason.message);
+      updateTracker();
+    });
+
+  /**
+   * Handle the settings of new widgets.
+   */
+  tracker.widgetAdded.connect((sender, widget) => {
+    if (widget.content.editor instanceof MonacoEditor) {
+      monaco.editor.setTheme(theme);
+    }
+  });
+
+  /**
+   * A test for whether the tracker has an active widget.
+   */
+  function isEnabled(): boolean {
+    return (
+      tracker.currentWidget !== null &&
+      tracker.currentWidget === app.shell.currentWidget
+    );
+  }
+
+  /**
+   * Create a menu for the editor.
+   */
+  const themeMenu = new Menu({ commands });
+  const modeMenu = new Menu({ commands });
+
+  themeMenu.title.label = "Text Editor Theme";
+  modeMenu.title.label = "Text Editor Syntax Highlighting";
+
+  commands.addCommand(CommandIDs.changeTheme, {
+    label: args => args["theme"] as string,
+    execute: args => {
+      const key = "theme";
+      const value = (theme = (args["theme"] as string) || theme);
+
+      updateTracker();
+      return settingRegistry.set(id, key, value).catch((reason: Error) => {
+        console.error(`Failed to set ${id}:${key} - ${reason.message}`);
+      });
+    },
+    isToggled: args => args["theme"] === theme
+  });
+
+  commands.addCommand(CommandIDs.find, {
+    label: "Find...",
+    execute: () => {
+      let widget = tracker.currentWidget;
+      if (!widget) {
+        return;
+      }
+      // TODO
+      // let editor = widget.content.editor as MonacoEditor;
+      // editor.execCommand('find');
+    },
+    isEnabled
+  });
+
+  commands.addCommand(CommandIDs.findAndReplace, {
+    label: "Find and Replace...",
+    execute: () => {
+      let widget = tracker.currentWidget;
+      if (!widget) {
+        return;
+      }
+      // TODO
+      // let editor = widget.content.editor as MonacoEditor;
+      // editor.execCommand('replace');
+    },
+    isEnabled
+  });
+
+  commands.addCommand(CommandIDs.changeMode, {
+    label: args => args["id"] as string,
+    execute: args => {
+      let name = args["id"] as string;
+      let widget = tracker.currentWidget;
+      if (name && widget) {
+        let mime = manager.findMimeTypeForLanguage(name);
+        if (mime) {
+          widget.content.model.mimeType = mime;
+        }
+      }
+    },
+    isEnabled,
+    isToggled: args => {
+      let widget = tracker.currentWidget;
+      if (!widget) {
+        return false;
+      }
+      let mime = widget.content.model.mimeType;
+      let id = manager.findLanguageForMimeType(mime)
+      return args["name"] === id;
+    }
+  });
+
+  monaco.languages
+    .getLanguages()
+    .sort((a, b) => {
+      let aName = a.id || "";
+      let bName = b.id || "";
+      return aName.localeCompare(bName);
+    })
+    .forEach(language => {
+      modeMenu.addItem({
+        command: CommandIDs.changeMode,
+        args: {
+          id: language.id
+        }
+      });
+    });
+
+  ["vs", "vs-dark", "hc-black"].forEach(name =>
+    themeMenu.addItem({
+      command: CommandIDs.changeTheme,
+      args: { theme: name }
+    })
+  );
+
+  // Add some of the editor settings to the settings menu.
+  mainMenu.settingsMenu.addGroup(
+    [{ type: "submenu" as Menu.ItemType, submenu: themeMenu }],
+    10
+  );
+
+  // Add the syntax highlighting submenu to the `View` menu.
+  mainMenu.viewMenu.addGroup([{ type: "submenu", submenu: modeMenu }], 40);
+
+  // Add find-replace capabilities to the edit menu.
+  mainMenu.editMenu.findReplacers.add({
+    tracker,
+    find: (widget: IDocumentWidget<FileEditor>) => {
+      // TODO
+      // let editor = widget.content.editor as MonacoEditor;
+      // editor.execCommand('find');
+    },
+    findAndReplace: (widget: IDocumentWidget<FileEditor>) => {
+      // TODO
+      // let editor = widget.content.editor as MonacoEditor;
+      // editor.execCommand('replace');
+    }
+  } as IEditMenu.IFindReplacer<IDocumentWidget<FileEditor>>);
+}
