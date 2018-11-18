@@ -110,7 +110,7 @@ export class MonacoEditor implements CodeEditor.IEditor {
       ...MonacoEditor.defaultConfig,
       ...config
     });
-    // TODO the text from the model is not directly available ?! Why?
+    // TODO the text at this point is empty - will be updated through onValueChanged
     let content = model.value.text;
     let monacoModel = monaco.editor.createModel(content);
     let editor = (this._editor = Private.createEditor(
@@ -118,13 +118,6 @@ export class MonacoEditor implements CodeEditor.IEditor {
       monacoModel,
       fullConfig
     ));
-
-    // FIXME - see previous TODO
-    let doc = editor.getModel();
-    // Handle initial values for text, mimetype, and selections.
-    window.setTimeout(() => {
-      doc.setValue(model.value.text);
-    }, 500);
 
     this.clearHistory();
     this._onMimeTypeChanged();
@@ -832,23 +825,22 @@ export class MonacoEditor implements CodeEditor.IEditor {
     }
     this._changeGuard = true;
     // TODO to be handle through ITextModel.applyEdits
-    // let doc = this.doc;
-    // switch (args.type) {
-    //   case "insert":
+    switch (args.type) {
+      case "insert":
     //     let pos = doc.posFromIndex(args.start);
     //     doc.replaceRange(args.value, pos, pos);
-    //     break;
-    //   case "remove":
+        break;
+      case "remove":
     //     let from = doc.posFromIndex(args.start);
     //     let to = doc.posFromIndex(args.end);
     //     doc.replaceRange("", from, to);
-    //     break;
-    //   case "set":
-    //     doc.setValue(args.value);
-    //     break;
-    //   default:
-    //     break;
-    // }
+        break;
+      case "set":
+        this.editor.setValue(args.value);
+        break;
+      default:
+        break;
+    }
     this._changeGuard = false;
   }
 
