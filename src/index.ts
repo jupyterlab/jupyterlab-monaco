@@ -10,7 +10,7 @@
  */
 
 import {
-  JupyterLab, JupyterLabPlugin
+  JupyterFrontEnd, JupyterFrontEndPlugin
 } from '@jupyterlab/application';
 
 
@@ -81,7 +81,7 @@ class MonacoWidget extends Widget {
     this.context = context;
 
     let content = context.model.toString();
-    let uri = monaco.Uri.parse(context.path);
+    let uri = monaco.Uri.parse('file://' + context.path);
 
     let monaco_model = undefined;
     if(monaco.editor.getModel(uri)) {
@@ -176,11 +176,11 @@ class MonacoEditorFactory extends ABCWidgetFactory<IDocumentWidget<MonacoWidget>
  * The only reason we depend on the IEditorTracker is so that our docregistry
  * 'defaultFor' runs *after* the file editors defaultFor.
  */
-const extension: JupyterLabPlugin<void> = {
+const extension: JupyterFrontEndPlugin<void> = {
   id: 'jupyterlab-monaco',
   autoStart: true,
   requires: [ICommandPalette, IEditorTracker],
-  activate: (app: JupyterLab, palette: ICommandPalette, editorTracker: IEditorTracker) => {
+  activate: (app: JupyterFrontEnd, palette: ICommandPalette, editorTracker: IEditorTracker) => {
 
     const factory = new MonacoEditorFactory({
       name: 'Monaco Editor',
@@ -197,7 +197,7 @@ const extension: JupyterLabPlugin<void> = {
         let widget = new Widget();
         widget.node.innerHTML = 'Creating new files coming...'
         //let widget = new MonacoWidget();
-        app.shell.addToMainArea(widget);
+        app.shell.add(widget, 'main');
 
         // Activate the widget
         app.shell.activateById(widget.id);

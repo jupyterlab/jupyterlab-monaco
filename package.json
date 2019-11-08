@@ -30,17 +30,19 @@
     "watch": "tsc -w"
   },
   "dependencies": {
-    "@jupyterlab/application": "^0.18.0",
-    "@jupyterlab/apputils": "^0.18.0",
-    "@jupyterlab/coreutils": "^2.0.2",
-    "@jupyterlab/fileeditor": "^0.18.0",
-    "monaco-editor": "^0.13.1"
+    "@jupyterlab/application": "^1.2.0",
+    "@jupyterlab/apputils": "^1.2.0",
+    "@jupyterlab/coreutils": "^3.2.0",
+    "@jupyterlab/fileeditor": "^1.2.0",
+    "@jupyterlab/ui-components": "^1.2.0",
+    "fsevents": "^2.1.1",
+    "monaco-editor": "^0.18.1",
+    "react": "^16.11.0",
+    "react-dom": "^16.11.0"
   },
   "devDependencies": {
-    "rimraf": "^2.6.1",
-    "typescript": "~2.6.0",
-    "webpack": "^4.6.0",
-    "webpack-cli": "^2.0.14"
+    "webpack": "^4.41.2",
+    "webpack-cli": "^3.3.10"
   },
   "jupyterlab": {
     "extension": true

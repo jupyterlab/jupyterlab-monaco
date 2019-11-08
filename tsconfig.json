@@ -9,7 +9,9 @@
     "target": "es2015",
     "lib": ["dom", "es2015"],
     "types": [],
-    "outDir": "./lib"
+    "outDir": "./lib",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
   },
   "include": ["src/*"]
 }
