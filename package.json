@@ -34,13 +34,11 @@
     "@jupyterlab/apputils": "^1.2.0",
     "@jupyterlab/coreutils": "^3.2.0",
     "@jupyterlab/fileeditor": "^1.2.0",
-    "@jupyterlab/ui-components": "^1.2.0",
-    "fsevents": "^2.1.1",
-    "monaco-editor": "^0.18.1",
-    "react": "^16.11.0",
-    "react-dom": "^16.11.0"
+    "monaco-editor": "^0.18.1"
   },
   "devDependencies": {
+    "rimraf": "^3.0.0",
+    "typescript": "^3.7.2",
     "webpack": "^4.41.2",
     "webpack-cli": "^3.3.10"
   },
