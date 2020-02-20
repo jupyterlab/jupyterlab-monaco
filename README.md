@@ -17,6 +17,14 @@ Feel free to head over to Monaco's repo and website to see what is and isn't pos
 
 * JupyterLab 0.32
 
+## Installation from source
+
+```bash
+yarn install
+yarn run build
+jupyter labextension install
+```
+
 ## Development
 
 For a development install, do the following in the repository directory:

@@ -2,3 +2,10 @@
 | Copyright (c) Jupyter Development Team.
 | Distributed under the terms of the Modified BSD License.
 |---------------------------------------------------------*/
+div.view-lines > div {
+    font-family: "Fira Code Retina", "Fira Code", "Droid Sans Mono", monospace, monospace, "Droid Sans Fallback" !important;
+}
+
+div.margin-view-overlays > div {
+    font-family: "Fira Code Retina", "Fira Code", "Droid Sans Mono", monospace, monospace, "Droid Sans Fallback" !important;
+}
