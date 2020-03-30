@@ -33,11 +33,11 @@ import {
 import {
   PromiseDelegate,
   UUID
-} from '@phosphor/coreutils';
+} from '@lumino/coreutils';
 
 import {
   Widget
-} from '@phosphor/widgets';
+} from '@lumino/widgets';
 
 import * as monaco from 'monaco-editor';
 
