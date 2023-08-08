@@ -1,3 +1,5 @@
+**This project has been archived by lack of maintainers**
+
 # JupyterLab Monaco Editor Extension
 
 A JupyterLab extension providing the [Monaco](https://github.com/Microsoft/monaco-editor/) editor.
